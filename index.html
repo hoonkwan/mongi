@@ -18,6 +18,27 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
   font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;overflow:hidden;user-select:none}
 body.dim{--bg:#1d1a19;--ink:#e9e1da;--soft:#9c918a;--card:#2a2625;--line:#3a3433;--body:#55708a;--body2:#4a6278;--cheek:#8a5a60}
 #stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .8s}
+#mongWrap{position:relative;will-change:transform}
+#mong .earL,#mong .earR{transform-box:fill-box;transform-origin:50% 100%}
+#mong .earL{animation:earL 2.6s ease-in-out infinite}
+#mong .earR{animation:earR 2.9s ease-in-out infinite}
+@keyframes earL{0%,100%{transform:rotate(0)}50%{transform:rotate(-9deg)}}
+@keyframes earR{0%,100%{transform:rotate(0)}50%{transform:rotate(9deg)}}
+#eyes{transition:transform .25s ease}
+#mong.spin .bodyg{transform-origin:200px 250px;animation:spin .9s ease-in-out}
+@keyframes spin{to{transform:rotate(360deg)}}
+#mong.dance .bodyg{animation:dance .5s ease-in-out infinite}
+@keyframes dance{0%,100%{transform:translateY(0) rotate(-7deg)}50%{transform:translateY(-28px) rotate(7deg)}}
+#mong.sway .bodyg{animation:sway 1.3s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+#mong.hooray .hl{transform:translate(10px,-170px)}
+#mong.hooray .hr{transform:translate(-10px,-170px)}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.fxi{position:absolute;line-height:1;will-change:transform,opacity;pointer-events:none;transform:translate(-50%,-50%)}
+.fxi.tap{pointer-events:auto;cursor:pointer;touch-action:manipulation}
+.bubble{border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.95) 0 12%,rgba(180,225,255,.35) 13% 60%,rgba(255,180,230,.45) 61% 100%);border:2px solid rgba(255,255,255,.8);box-shadow:0 0 12px rgba(150,200,255,.5)}
+.ball{width:70px;height:70px;border-radius:50%;background:conic-gradient(#f76b6b 0 25%,#ffd25a 0 50%,#6bc5f7 0 75%,#8fdc7a 0);border:4px solid #fff;box-shadow:0 6px 14px rgba(0,0,0,.15)}
+.cover{width:190px;height:170px;border-radius:90px 90px 24px 24px;background:#e88a5a;border:5px solid #fff;box-shadow:0 8px 16px rgba(0,0,0,.15)}
 #mong{width:min(78vw,62vh);height:min(78vw,62vh);touch-action:manipulation;cursor:pointer}
 #mong .bodyg{transform-origin:200px 380px;animation:breathe 3.2s ease-in-out infinite}
 @keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.985)}}
@@ -121,18 +142,18 @@ select,input[type=range]{max-width:58%}
 
 <div id="stage">
   <div id="pic"></div>
-  <svg id="mong" viewBox="0 0 400 420" aria-label="몽이">
+  <div id="mongWrap"><svg id="mong" viewBox="0 0 400 420" aria-label="몽이">
     <g class="bodyg">
       <ellipse cx="200" cy="395" rx="120" ry="14" fill="#000" opacity=".06"/>
-      <ellipse cx="135" cy="80" rx="34" ry="62" fill="var(--body2)" transform="rotate(-14 135 80)"/>
-      <ellipse cx="265" cy="80" rx="34" ry="62" fill="var(--body2)" transform="rotate(14 265 80)"/>
-      <ellipse cx="135" cy="84" rx="16" ry="42" fill="var(--cheek)" opacity=".55" transform="rotate(-14 135 84)"/>
-      <ellipse cx="265" cy="84" rx="16" ry="42" fill="var(--cheek)" opacity=".55" transform="rotate(14 265 84)"/>
+      <g class="earL"><ellipse cx="135" cy="80" rx="34" ry="62" fill="var(--body2)" transform="rotate(-14 135 80)"/>
+      <ellipse cx="135" cy="84" rx="16" ry="42" fill="var(--cheek)" opacity=".55" transform="rotate(-14 135 84)"/></g>
+      <g class="earR"><ellipse cx="265" cy="80" rx="34" ry="62" fill="var(--body2)" transform="rotate(14 265 80)"/>
+      <ellipse cx="265" cy="84" rx="16" ry="42" fill="var(--cheek)" opacity=".55" transform="rotate(14 265 84)"/></g>
       <path d="M60 250 C60 140 120 110 200 110 C280 110 340 140 340 250 C340 340 290 385 200 385 C110 385 60 340 60 250Z" fill="var(--body)"/>
       <g class="face">
-        <ellipse class="eye" cx="152" cy="225" rx="15" ry="19" fill="#2e2a28"/>
-        <ellipse class="eye" cx="248" cy="225" rx="15" ry="19" fill="#2e2a28"/>
-        <circle cx="157" cy="218" r="5" fill="#fff"/><circle cx="253" cy="218" r="5" fill="#fff"/>
+        <g id="eyes"><ellipse class="eye" cx="152" cy="225" rx="17" ry="21" fill="#2e2a28"/>
+        <ellipse class="eye" cx="248" cy="225" rx="17" ry="21" fill="#2e2a28"/>
+        <circle cx="158" cy="217" r="6" fill="#fff"/><circle cx="254" cy="217" r="6" fill="#fff"/></g>
         <ellipse cx="118" cy="268" rx="22" ry="13" fill="var(--cheek)" opacity=".8"/>
         <ellipse cx="282" cy="268" rx="22" ry="13" fill="var(--cheek)" opacity=".8"/>
         <ellipse id="mouth" cx="200" cy="272" rx="16" ry="5" fill="#7a3b3b"/>
@@ -142,9 +163,10 @@ select,input[type=range]{max-width:58%}
         <ellipse class="hr" cx="305" cy="318" rx="30" ry="26" fill="#9fcaeb" stroke="#fff" stroke-width="4"/>
       </g>
     </g>
-  </svg>
+  </svg></div>
   <div id="lyric"></div>
 </div>
+<div id="fx"></div>
 
 <div id="timer"></div>
 <div id="ear" title="듣는 중"><i></i></div>
@@ -185,6 +207,11 @@ select,input[type=range]{max-width:58%}
     <button class="chip" data-cmd="clap">👏 짝짜꿍</button>
     <button class="chip" data-cmd="name">📣 이름 부르기</button>
     <button class="chip" data-cmd="clip">🎙 엄마·아빠 목소리</button>
+    <button class="chip" data-cmd="bubbles">🫧 비눗방울</button>
+    <button class="chip" data-cmd="ball">⚽ 공 주고받기</button>
+    <button class="chip" data-cmd="dance">💃 춤</button>
+    <button class="chip" data-cmd="hide">🧸 숨긴 장난감</button>
+    <button class="chip" data-cmd="stars">⭐ 별 잡기</button>
     <button class="chip" data-cmd="bye">👋 끝내기</button>
   </div>
 
@@ -218,8 +245,8 @@ select,input[type=range]{max-width:58%}
   <label class="set">마이크 민감도 <input type="range" id="sens" min="1" max="10" value="5"></label>
   <label class="set">몽이 목소리 <select id="voiceSel"></select></label>
   <label class="set">말 빠르기 <input type="range" id="rate" min="60" max="110" value="85"></label>
-  <label class="set">몽이가 먼저 말 거는 간격 <select id="idleSel">
-    <option value="15">15초</option><option value="25" selected>25초</option><option value="40">40초</option></select></label>
+  <label class="set">놀이 사이 쉬는 시간 <select id="idleSel">
+    <option value="3">3초 (활발)</option><option value="5">5초</option><option value="10">10초</option><option value="20">20초 (차분)</option></select></label>
   <label class="set">화면 어둡게 (밤) <input type="checkbox" id="dimChk"></label>
   <label class="set">소리 해석 자막 보이기 <input type="checkbox" id="thinkChk" checked></label>
   <div class="row" style="justify-content:flex-start"><button class="chip" id="testMic">마이크 테스트</button><span class="small" id="micLvl"></span></div>
@@ -228,7 +255,7 @@ select,input[type=range]{max-width:58%}
   <div class="small">
   · <b>옹알이 해석은 추측이에요.</b> 11개월 옹알이는 아직 정해진 뜻이 없어서, 몽이는 소리 모양(길이·높이·억양·음절 수)과 상황(먹은 시간·깬 시간)으로 가능성을 말해 줄 뿐이에요. {N} 표정·손짓을 같이 보세요.<br>
   · 몽이가 하는 일의 핵심은 <b>주고받기(serve &amp; return)</b> — {N}가 소리 내면 바로 대답하고 3초 기다려 주는 것. 엄마·아빠가 똑같이 해 주면 효과가 몇 배예요.<br>
-  · 대한소아청소년과학회·WHO·미국소아과학회는 <b>18~24개월 전 화면 노출을 최소화</b>하라고 권해요(가족 영상통화는 예외). 그래서 몽이는 한 번에 5~15분만 놀고 스스로 끝나며, 화면보다 소리 위주로 놀아요. 화면 어둡게를 켜도 돼요.<br>
+  · 대한소아청소년과학회·WHO·미국소아과학회는 <b>18~24개월 전 화면 노출을 최소화</b>하라고 권해요(가족 영상통화는 예외). 그래서 몽이는 한 번에 5~15분만 놀고 스스로 끝나요. 몽이와 놀 때 엄마·아빠가 옆에서 같이 반응해 주면 효과가 가장 커요.<br>
   · <b>울음이 감지되면 몽이는 달래기를 멈추고 어른을 불러요.</b> 몽이를 우는 아이 달래는 기계로 쓰지 마세요.<br>
   · 몽이는 보모가 아니에요. 어른이 같은 방에 있을 때만 켜 주세요.
   </div>
@@ -274,7 +301,7 @@ function day() {
   DB.days[k] = DB.days[k] || { events: [], turns: 0, bestChain: 0, sessions: 0, minutes: 0 };
   return DB.days[k];
 }
-const S = Object.assign({ sens: 8, rate: 85, idle: 25, dim: false, think: true, voice: '' }, DB.settings);
+const S = Object.assign({ gap: 5, sens: 8, rate: 85, dim: false, think: true, voice: '' }, DB.settings);
 function saveSettings() { DB.settings = S; save(); }
 
 /* ============ 오디오 ============ */
@@ -312,19 +339,19 @@ function pickVoices() {
 }
 speechSynthesis.onvoiceschanged = pickVoices; pickVoices();
 
-let busy = 0, muteUntil = 0;
+let busy = 0, muteUntil = 0, voiceOut = 0;   // busy=놀이 진행 중, voiceOut=몽이가 소리 내는 중
 const mouth = document.getElementById('mouth');
 function say(text, { pitch = 1.45, rate } = {}) {
   return new Promise(res => {
     if (ended) return res();
-    busy++;
+    busy++; voiceOut++;
     const u = new SpeechSynthesisUtterance(T(text));
     const v = VOICES.find(v => v.name === S.voice); if (v) u.voice = v;
     u.lang = 'ko-KR'; u.pitch = pitch; u.rate = (rate || S.rate) / 100;
     u.volume = nightMode() ? 0.7 : 1;
     let talk = setInterval(() => { mouth.setAttribute('ry', 5 + Math.random() * 16); mouth.setAttribute('rx', 14 + Math.random() * 6); }, 110);
     let fin = false;
-    const done = () => { if (fin) return; fin = true; clearTimeout(guard); clearInterval(talk); mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16); busy=Math.max(0,busy-1); muteUntil = performance.now() + 600; markServe(); res(); };
+    const done = () => { if (fin) return; fin = true; clearTimeout(guard); clearInterval(talk); mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16); busy=Math.max(0,busy-1); voiceOut = Math.max(0, voiceOut - 1); muteUntil = performance.now() + 600; markServe(); res(); };
     u.onend = done; u.onerror = done;
     const guard = setTimeout(() => { try { speechSynthesis.cancel(); } catch (e) {} done(); }, 2500 + T(text).length * 260);  // 폰에서 끝 신호가 안 와도 멈추지 않게
     speechSynthesis.cancel(); speechSynthesis.speak(u);
@@ -410,7 +437,7 @@ const lyricEl = document.getElementById('lyric');
 let songStop = false;
 async function sing(key) {
   const s = SONGS[key]; if (!s || ended) return;
-  busy++; songStop = false;
+  busy++; voiceOut++; songStop = false;
   songBus = AC.createGain(); songBus.connect(master); const myBus = songBus;
   const beat = 60 / s.bpm, mong = document.getElementById('mong');
   let t = AC.currentTime + 0.25; const t0 = t, timers = [];
@@ -438,7 +465,7 @@ async function sing(key) {
   timers.forEach(clearTimeout);
   myBus.gain.setTargetAtTime(0, AC.currentTime, 0.05); setTimeout(() => myBus.disconnect(), 400); if (songBus === myBus) songBus = null;
   mong.classList.remove('hide', 'clap', 'shake'); mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16);
-  lyricEl.textContent = ''; busy=Math.max(0,busy-1); muteUntil = performance.now() + 800; markServe();
+  lyricEl.textContent = ''; busy=Math.max(0,busy-1); voiceOut = Math.max(0, voiceOut - 1); muteUntil = performance.now() + 800; markServe();
   logEvent({ kind: 'song', title: s.title });
 }
 
@@ -465,7 +492,7 @@ function listenTick() {
   if (!analyser || (ended && !micTesting)) return;
   analyser.getFloatTimeDomainData(buf);
   const r = rmsOf(buf), now = performance.now();
-  const gated = busy > 0 || now < muteUntil;
+  const gated = voiceOut > 0 || now < muteUntil;
   const k = 1.6 + (10 - S.sens) * 0.45;                    // 민감도
   const thr = Math.max(floor * k * 1.5, 0.003 + (10 - S.sens) * 0.0015);
   earLevel(r / thr);
@@ -560,7 +587,6 @@ const EXPAND = {
 };
 function echoOf(a) { const n = Math.min(4, Math.max(1, a.syl)); return '아'.repeat(n); }
 async function respond(kind, a) {
-  const mong = document.getElementById('mong');
   const e = echoOf(a), q = a.contour === 'up' ? '?' : (a.contour === 'down' ? '~' : '!');
   if (kind === 'babble' || kind === 'single') {
     const lines = a.contour === 'up'
@@ -569,10 +595,8 @@ async function respond(kind, a) {
       ? [`${e}${q} 그렇구나~`, `${e}${q} 맞아 맞아~`, `우와, {N} 말 잘한다~ ${e}!`]
       : [`${e}! 몽이도 ${e}!`, `${e}! {N} 목소리 예쁘다~`, `응! ${e}! 그랬어~?`];
     if (kind === 'single') lines.push('응? {N}야, 몽이 불렀어?');
-    mong.classList.add('bounce'); setTimeout(() => mong.classList.remove('bounce'), 1100);
     await say(pick(lines));
   } else if (kind === 'laugh') {
-    mong.classList.add('bounce'); setTimeout(() => mong.classList.remove('bounce'), 1100);
     await say(pick(['히히히! {N}가 웃었다~ 몽이도 좋아!', '까르르~ {N} 웃음소리 최고야!', '히히, 또 웃어 줘~']));
   } else if (kind === 'squeal') {
     await say(pick(['꺄~! {N} 신났구나!', '우와~ {N} 목소리 크다! 신나~', '꺄아! 뭐가 좋아~?']));
@@ -581,35 +605,106 @@ async function respond(kind, a) {
   }
 }
 
+/* ============ 몽이 몸짓·효과 ============ */
+const wrapEl = document.getElementById('mongWrap'), fxEl = document.getElementById('fx'), mongEl = document.getElementById('mong');
+let pos = { x: 0, y: 0, s: 1 }, moving = false;
+const tf = p => `translate(${p.x}px,${p.y}px) scale(${p.s})`;
+function moveTo(x, y, { ms = 700, hop = 60, s = pos.s } = {}) {
+  const a = { ...pos }, b = { x, y, s }; pos = b; moving = true;
+  const mid = { x: (a.x + b.x) / 2, y: Math.min(a.y, b.y) - hop, s: (a.s + b.s) / 2 };
+  const an = wrapEl.animate([{ transform: tf(a) }, { transform: tf(mid) }, { transform: tf(b) }], { duration: ms, easing: 'ease-in-out', fill: 'forwards' });
+  return an.finished.catch(() => {}).then(() => { moving = false; });
+}
+function jumpTo(x, y, s = pos.s) { pos = { x, y, s }; wrapEl.animate([{ transform: tf(pos) }], { duration: 1, fill: 'forwards' }); }
+const bounds = () => ({ x: innerWidth * 0.22, y: innerHeight * 0.07 });
+const clampX = x => Math.max(-bounds().x * 1.4, Math.min(bounds().x * 1.4, x)), clampY = y => Math.max(-bounds().y * 2.5, Math.min(bounds().y, y));
+function look(dx, dy) { const e = document.getElementById('eyes'); if (e) e.style.transform = `translate(${dx}px,${dy}px)`; }
+function pose(cls, ms) { mongEl.classList.add(cls); if (ms) setTimeout(() => mongEl.classList.remove(cls), ms); }
+function mongCenter() { const r = mongEl.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height * 0.45]; }
+function sfx(type) {
+  if (!AC) return;
+  const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+  o.connect(g); g.connect(master); muteUntil = Math.max(muteUntil, performance.now() + 300);
+  const env = (pk, len) => { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(pk, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + len); o.start(t); o.stop(t + len + 0.02); };
+  if (type === 'pop') { o.type = 'sine'; o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(300, t + 0.12); env(0.4, 0.15); }
+  else if (type === 'boing') { o.type = 'triangle'; o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(760, t + 0.22); env(0.3, 0.35); }
+  else if (type === 'ding') { o.type = 'sine'; o.frequency.value = pick([1047, 1175, 1319, 1568]); env(0.25, 0.7); }
+  else if (type === 'drum') { o.type = 'sine'; o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(50, t + 0.15); env(0.7, 0.2); }
+  else if (type === 'whoosh') { o.type = 'sawtooth'; o.frequency.setValueAtTime(1200, t); o.frequency.exponentialRampToValueAtTime(150, t + 0.3); env(0.06, 0.32); }
+}
+function sparkle(x, y, n = 10, set = ['✨', '⭐', '💖', '🌟']) {
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div'); el.className = 'fxi'; el.textContent = pick(set);
+    el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.fontSize = (26 + Math.random() * 26) + 'px'; fxEl.appendChild(el);
+    const ang = Math.random() * Math.PI * 2, d = 70 + Math.random() * 120;
+    el.animate([{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 1 },
+      { transform: `translate(calc(-50% + ${Math.cos(ang) * d}px), calc(-50% + ${Math.sin(ang) * d}px)) scale(1.1)`, opacity: 0 }],
+      { duration: 900 + Math.random() * 400, easing: 'ease-out' }).finished.then(() => el.remove());
+  }
+}
+function prop(html, x, y, size, tap) {
+  const el = document.createElement('div'); el.className = 'fxi' + (tap ? ' tap' : '');
+  el.innerHTML = html; el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.fontSize = size + 'px';
+  el.style.transform = 'translate(-50%,-50%)'; fxEl.appendChild(el);
+  if (tap) el.addEventListener('pointerdown', ev => { ev.stopPropagation(); tap(el, ev); });
+  return el;
+}
+const anim = (el, kf, ms, ease = 'ease-in-out') => el.animate(kf, { duration: ms, easing: ease, fill: 'forwards' }).finished.catch(() => {});
+
+/* 이아 반응 받기 */
+let curAct = null, respWaiter = null, lastInterject = 0, lastTouchLog = 0;
+function waitResp(ms) { return new Promise(r => { respWaiter = r; setTimeout(() => { if (respWaiter === r) { respWaiter = null; r(false); } }, ms); }); }
+function babyResponded(how) {
+  lastBabyAt = Date.now();
+  if (curAct) { const st = actStat(curAct); st.resp++; save(); }
+  if (respWaiter) { const r = respWaiter; respWaiter = null; r(how); }
+}
+function actStat(k) { DB.acts = DB.acts || {}; return DB.acts[k] = DB.acts[k] || { runs: 0, resp: 0 }; }
+function react(kind) {                                 // 소리 나면 즉시 눈에 보이게
+  const [x, y] = mongCenter(); look(0, 8);
+  if (kind === 'laugh') { pose('spin', 950); sparkle(x, y, 16, ['💖', '😆', '✨', '💕']); sfx('boing'); }
+  else if (kind === 'squeal') { pose('bounce', 1100); sparkle(x, y, 14, ['⭐', '🌟', '✨']); sfx('boing'); }
+  else if (kind === 'fuss') { sparkle(x, y, 4, ['💗']); }
+  else { pose('bounce', 1100); sparkle(x, y, 8, ['🎵', '🎶', '✨']); sfx('ding'); }
+}
+
 let crySegs = [];
 async function onUtterance(u, thr) {
   const a = analyse(u, thr), kind = classify(a);
   if (!kind) { if (!ended && a.dur > 0.12) hint('소리는 들렸는데 너무 작거나 짧아요'); return; }
   if (ended) { showThink(kind, a, interpret(kind, a)); return; }   // 마이크 테스트
   const now = performance.now();
-  if (kind === 'adult') {                              // 어른 목소리: 가끔만 짧게 받아 주고 아이 차례로 넘김
+  if (kind === 'adult') {
     markServe(); hint('어른 목소리 들림');
     if (!busy && Date.now() - (onUtterance.lastAdult || 0) > 20000) {
       onUtterance.lastAdult = Date.now(); busy++;
-      try { await say(pick(['응~ 몽이 여기 있어! {N}도 말해 볼까?', '그랬구나~ {N}야, 너도 말해 줘!', '응응! {N}야, 몽이랑 얘기하자~'])); } finally { busy = Math.max(0, busy - 1); lastActAt = Date.now(); }
+      try { pose('bounce', 1100); await say(pick(['응~ 몽이 여기 있어! {N}도 말해 볼까?', '그랬구나~ {N}야, 너도 말해 줘!', '응응! {N}야, 몽이랑 얘기하자~'])); } finally { busy = Math.max(0, busy - 1); lastActAt = Date.now(); }
     }
     return;
-  }      // 어른이 말함 → {N} 대답을 기다림
+  }
   const isTurn = now - lastServeAt < 5000 && kind !== 'cry';
   const d = day();
   if (isTurn) { d.turns++; chain++; d.bestChain = Math.max(d.bestChain, chain); } else chain = 1;
   const meaning = interpret(kind, a);
-  logEvent({ kind, syl: a.syl, contour: a.contour, pitch: Math.round(a.med), dur: +a.dur.toFixed(2), turn: isTurn, meaning });
+  logEvent({ kind, syl: a.syl, contour: a.contour, pitch: Math.round(a.med), dur: +a.dur.toFixed(2), turn: isTurn, meaning, act: curAct });
   showThink(kind, a, meaning);
-  lastBabyAt = Date.now();
   if (kind === 'cry') {
     crySegs = crySegs.filter(t => now - t < 20000); crySegs.push(now);
     if (crySegs.length >= 2) return crying();
     return;
   }
-  if (busy) return;
+  react(kind);
+  const waited = !!respWaiter;
+  babyResponded('voice');
+  if (busy) {                                           // 놀이 중이어도 짧게 바로 받아 줌
+    if (!waited && Date.now() - lastInterject > 4000) {
+      lastInterject = Date.now();
+      say(kind === 'laugh' ? pick(['히히히!', '까르르~ 좋아?']) : kind === 'squeal' ? pick(['꺄~!', '우와!']) : echoOf(a) + (a.contour === 'up' ? '?' : '!') + ' ' + pick(['그랬어?', '맞아!', '응!']));
+    }
+    return;
+  }
   busy++;
-  try { await respond(kind, a); } finally { busy=Math.max(0,busy-1); lastActAt = Date.now(); }  // 대답 후엔 마이크 열고 {N} 차례를 기다림
+  try { await respond(kind, a); } finally { busy = Math.max(0, busy - 1); lastActAt = Date.now(); }
   if (kind === 'fuss') {
     const recent = day().events.filter(e => e.kind === 'fuss' && Date.now() - e.ts < 90000).length;
     if (recent >= 3) showAlert('{N}가 칭얼거려요 — ' + (meaning[0] || '안아 주세요'), 8000);
@@ -617,89 +712,231 @@ async function onUtterance(u, thr) {
 }
 async function crying() {
   if (cryMode) return; cryMode = true; songStop = true; speechSynthesis.cancel();
+  clearProps();
   const meaning = interpret('cry', {});
   showAlert('{N}가 울어요 — 안아 주세요' + (meaning[0] ? ' · ' + meaning[0] : ''), 0);
   try { if (navigator.vibrate) navigator.vibrate(300); } catch (e) {}
-  // 어른이 올 때까지 몽이는 조용히 한마디만, 놀이는 멈춤
   await wait(400); busy++;
   await say('{N}야, 괜찮아. 엄마 아빠 불러 줄게.', { pitch: 1.1, rate: 70 });
-  busy=Math.max(0,busy-1);
+  busy = Math.max(0, busy - 1);
   logEvent({ kind: 'alert', note: '울음 감지 — 어른 호출' });
 }
 let cryMode = false;
 function clearCry() { cryMode = false; crySegs = []; document.getElementById('alert').classList.remove('on'); }
 document.getElementById('alert').onclick = clearCry;
+function clearProps() { fxEl.querySelectorAll('.prop').forEach(el => el.remove()); }
 
-/* ============ 놀이 프로그램 (몽이가 알아서) ============ */
-const ANIMALS = [['🐶', '멍멍이', '멍멍! 멍멍!'], ['🐱', '야옹이', '야옹~ 야옹~'], ['🐮', '음매 소', '음매~ 음매~'],
-  ['🦆', '오리', '꽥꽥! 꽥꽥!'], ['🐷', '꿀꿀 돼지', '꿀꿀! 꿀꿀!'], ['🚗', '자동차', '빵빵! 빵빵!'], ['🐑', '양', '메에~ 메에~']];
-const CHATS = ['{N}야~ 몽이는 {N}가 제일 좋아!', '{N}야, 오늘 맘마 맛있게 먹었어?', '{N} 손 어디 있지? 여기 있네~ 짝짝!',
-  '{N}야, 엄마는 어디 있을까? 아빠는 어디 있을까?', '몽이 귀 봐 봐, 길~지? 쫑긋쫑긋!', '{N}야, 우리 같이 박수 쳐 볼까? 짝짝짝!',
-  '{N} 발가락 꼼지락꼼지락~', '{N}야, 몽이한테 무슨 말 해 줄래?'];
-let agendaIdx = 0, lastBabyAt = 0, lastActAt = 0;
-function agenda() {
-  if (nightMode()) return ['lullaby', 'chat', 'clip', 'lullaby'];
-  return ['name', 'peek', 'song', 'animal', 'chat', 'clap', 'clip', 'name', 'song', 'animal', 'peek', 'chat'];
-}
-async function act(what) {
+/* 화면 아무 데나 톡 → 반짝 */
+document.getElementById('stage').addEventListener('pointerdown', ev => {
+  if (ended || ev.target.closest('#mong')) return;
+  sparkle(ev.clientX, ev.clientY, 6); sfx('pop');
+  if (Date.now() - lastTouchLog > 1500) { lastTouchLog = Date.now(); logEvent({ kind: 'touch', act: curAct }); }
+  babyResponded('touch');
+});
+
+/* 가만히 있을 때도 살아 움직이기 */
+setInterval(() => {
   if (ended || cryMode) return;
-  busy++; songStop = false; lastActAt = Date.now();
-  const mong = document.getElementById('mong'), pic = document.getElementById('pic');
-  try {
-    if (what === 'greet') {
-      mong.classList.add('wave');
-      await say(`{N}야~ 안녕! ${FRIEND} 왔어! 반가워~`); mong.classList.remove('wave');
-    } else if (what === 'name') {
-      await say(`{N}야~`); await wait(2500); await say(pick(['몽이 여기 있지~', '우와, 몽이 봤어?', `{N}야, 사랑해~`]));
-    } else if (what === 'peek') {
-      await say('까꿍 놀이 하자!');
-      for (let i = 0; i < 3 && !songStop; i++) {
-        mong.classList.add('hide'); await say(pick(['몽이 어디 있~게?', '어디 갔지~?', '없~다!']), { pitch: 1.3 });
-        await wait(1200); mong.classList.remove('hide'); mong.classList.add('bounce');
-        await say('까꿍!', { pitch: 1.8 }); setTimeout(() => mong.classList.remove('bounce'), 1000); await wait(1800);
-      }
-    } else if (what === 'song') {
-      const k = pick(['star', 'play', 'peek']);
-      await say(`{N}야, 몽이가 노래 불러 줄게. ${T(SONGS[k].title).replace(/\{N\}/g,'')}!`); await sing(k);
-      await say(pick(['짝짝짝! 노래 끝~', '재밌었어? 또 부를까?']));
-    } else if (what === 'lullaby') {
-      document.body.classList.add('dim');
-      await say(`{N}야, 자장가 불러 줄게.`, { pitch: 1.1, rate: 70 }); await sing('lullaby');
-      document.body.classList.toggle('dim', dimOn());
-    } else if (what === 'animal') {
-      const [em, nm, snd] = pick(ANIMALS);
-      pic.textContent = em; pic.classList.add('on');
-      await say(`이건 ${nm}야. ${snd}`); await wait(1500); await say(snd); await wait(2500);
-      pic.classList.remove('on');
-    } else if (what === 'clap') {
-      mong.classList.add('clap'); const t = AC.currentTime;
-      await say('짝짜꿍 하자! 짝짜꿍~ 짝짜꿍~');
-      for (let i = 0; i < 6; i++) clapSound(AC.currentTime + 0.1 + i * 0.45);
-      await wait(2800); mong.classList.remove('clap');
-      mong.classList.add('shake'); await say('도리도리~ 도리도리~'); await wait(1200); mong.classList.remove('shake');
-      mong.classList.add('wave'); await say('빠이빠이~ 하고 손 흔들기!'); await wait(1200); mong.classList.remove('wave');
-    } else if (what === 'chat') {
-      await say(pick(CHATS));
-    } else if (what === 'clip') {
-      const cl = await clipList();
-      if (cl.length) { const c = pick(cl); await say(`{N}야, 들어 봐~ ${c.name}!`); await playClip(c.id); }
-      else await say(pick(CHATS));
-    } else if (what === 'bye') {
-      mong.classList.add('wave');
-      await say(`{N}야, 오늘 ${FRIEND}랑 재밌었어! 이제 엄마 아빠랑 놀자~ 빠이빠이~`);
-      mong.classList.remove('wave');
+  look((Math.random() - 0.5) * 18, (Math.random() - 0.5) * 10);
+  if (!curAct && !moving && Math.random() < 0.45) {
+    const b = bounds(); moveTo((Math.random() - 0.5) * 2 * b.x, (Math.random() - 0.5) * 2 * b.y, { ms: 800, hop: 40 + Math.random() * 50 });
+    if (Math.random() < 0.3) pose('wave', 1500);
+  }
+}, 2200);
+
+/* ============ 놀이 (몽이가 알아서, {N}가 좋아하는 걸 더 자주) ============ */
+const ANIMALS = [['🐶', '멍멍이', '멍멍! 멍멍!'], ['🐱', '야옹이', '야옹~ 야옹~'], ['🐮', '음매 소', '음매~ 음매~'],
+  ['🦆', '오리', '꽥꽥! 꽥꽥!'], ['🐷', '꿀꿀 돼지', '꿀꿀! 꿀꿀!'], ['🚗', '자동차', '빵빵! 빵빵!'], ['🐑', '양', '메에~ 메에~'], ['🐔', '꼬꼬닭', '꼬꼬댁 꼬꼬!']];
+const TOYS = [['🧸', '곰돌이'], ['🐥', '삐약이'], ['🍌', '바나나'], ['🚗', '빵빵이'], ['🍎', '사과'], ['🐟', '물고기']];
+const CHATS = ['{N}야~ 몽이는 {N}가 제일 좋아!', '{N} 손 어디 있지? 여기 있네~ 짝짝!', '몽이 귀 봐 봐, 길~지? 쫑긋쫑긋!',
+  '{N} 발가락 꼼지락꼼지락~', '{N}야, 몽이한테 무슨 말 해 줄래?', '{N}야, 엄마 어디 있어? 아빠는 어디 있어?'];
+const ACT_NAMES = { peek: '까꿍', bubbles: '비눗방울', ball: '공 주고받기', animal: '동물 친구', dance: '춤추기', hide: '숨긴 장난감 찾기',
+  name: '이름 부르기', clap: '짝짜꿍·도리도리', song: '노래', stars: '별 잡기', chat: '말 걸기', clip: '엄마·아빠 목소리', lullaby: '자장가' };
+let agendaIdx = 0, lastBabyAt = 0, lastActAt = 0, lastPicked = [];
+function nextAct() {
+  if (nightMode()) return pick(['lullaby', 'chat', 'clip', 'lullaby', 'name']);
+  const pool = ['peek', 'bubbles', 'ball', 'animal', 'dance', 'hide', 'name', 'clap', 'stars', 'song', 'chat', 'clip'];
+  const cand = pool.filter(k => !lastPicked.includes(k));
+  const wts = cand.map(k => { const s = actStat(k); const base = (s.resp + 1) / (s.runs + 2); return (k === 'song' || k === 'chat' || k === 'clip' ? 0.5 : 1) * (0.4 + base); });
+  let r = Math.random() * wts.reduce((a, b) => a + b, 0), i = 0;
+  while (r > wts[i]) r -= wts[i++];
+  const k = cand[Math.min(i, cand.length - 1)];
+  lastPicked.push(k); if (lastPicked.length > 4) lastPicked.shift();
+  return k;
+}
+const stopped = () => songStop || ended || cryMode;
+
+const ACTS = {
+  async greet() { pose('wave', 2500); await moveTo(0, 0, { s: 1.1 }); await say('{N}야~ 안녕! 몽이 왔어! 반가워~'); await moveTo(0, 0, { s: 1 }); },
+  async name() {
+    look(0, 10); await moveTo(0, innerHeight * 0.04, { s: 1.28, hop: 20 });
+    await say('{N}야~!');
+    const r = await waitResp(3500);
+    if (r) { sparkle(...mongCenter(), 14); pose('bounce', 1100); await say(pick(['대답했어? 우와~ 똑똑하다!', '{N}가 대답했다! 최고!'])); }
+    else { pose('wave', 1600); await say(pick(['몽이 여기 있어~ 안녕!', '{N}야, 몽이 봐~ 여기!'])); }
+    await moveTo(0, 0, { s: 1 });
+  },
+  async peek() {
+    await say('까꿍 놀이 하자!');
+    for (let i = 0; i < 3 && !stopped(); i++) {
+      const side = pick(['left', 'right', 'bottom']), W = innerWidth, H = innerHeight;
+      sfx('whoosh'); await moveTo(side === 'left' ? -W : side === 'right' ? W : 0, side === 'bottom' ? H : 0, { ms: 450, hop: 30 });
+      say(pick(['몽이 어디 있~게?', '어디 갔지~?', '없~다!']), { pitch: 1.3 });
+      await waitResp(2300); if (stopped()) break;
+      const from = pick(['left', 'right', 'bottom']);
+      jumpTo(from === 'left' ? -W : from === 'right' ? W : 0, from === 'bottom' ? H : 0);
+      await moveTo((Math.random() - 0.5) * bounds().x, 0, { ms: 500, hop: 80, s: 1.12 });
+      sfx('boing'); sparkle(...mongCenter(), 14); pose('bounce', 1100);
+      await say('까꿍!', { pitch: 1.8 }); await wait(900);
     }
-    if (what !== 'bye') logEvent({ kind: 'play', what });
-  } finally { busy=Math.max(0,busy-1); muteUntil = performance.now() + 600; markServe(); lastActAt = Date.now(); }
-  await wait(1500);
+    await moveTo(0, 0, { s: 1 });
+  },
+  async bubbles() {
+    await say('비눗방울 놀이 하자! 후~');
+    let popped = 0; const W = innerWidth, H = innerHeight;
+    const make = () => {
+      const sz = 70 + Math.random() * 70, x = W * (0.12 + Math.random() * 0.76);
+      const el = prop('', x, H + 60, 10, (b) => { popped++; sfx('pop'); const r = b.getBoundingClientRect(); sparkle(r.left + r.width / 2, r.top + r.height / 2, 7, ['✨', '💧', '⭐']); b.remove(); babyResponded('touch'); if (popped % 3 === 0) say(pick(['펑! 잘했어!', '우와, 또 터졌다!'])); });
+      el.classList.add('prop', 'bubble'); el.style.width = el.style.height = sz + 'px';
+      const sway = (Math.random() - 0.5) * 140;
+      el.animate([{ transform: 'translate(-50%,0)' }, { transform: `translate(calc(-50% + ${sway}px), -${H * 0.55}px)` }, { transform: `translate(calc(-50% - ${sway / 2}px), -${H + 200}px)` }],
+        { duration: 7000 + Math.random() * 3000, easing: 'linear', fill: 'forwards' }).finished.then(() => el.remove()).catch(() => {});
+    };
+    for (let i = 0; i < 14 && !stopped(); i++) {
+      make(); if (i % 3 === 0) { pose('bounce', 1000); }
+      if (i === 6) {                                     // 몽이도 하나 터뜨리기
+        const bs = [...fxEl.querySelectorAll('.bubble')]; const b = bs[0];
+        if (b) { const r = b.getBoundingClientRect(); moveTo(clampX(r.left + r.width / 2 - innerWidth / 2), clampY(r.top - innerHeight / 2), { ms: 600, hop: 60 }).then(() => { if (b.isConnected) { sfx('pop'); sparkle(r.left + r.width / 2, r.top, 6); b.remove(); } }); say('몽이도 펑!'); }
+      }
+      await wait(700);
+    }
+    await wait(4500);
+    await say(popped ? `${popped}개 터뜨렸다! {N} 최고!` : '비눗방울 하늘로 날아갔다~ 안녕~');
+    clearProps(); await moveTo(0, 0);
+  },
+  async ball() {
+    await say('공 놀이 하자! {N}한테 데굴데굴~');
+    for (let round = 0; round < 3 && !stopped(); round++) {
+      const [mx, my] = mongCenter();
+      const ball = prop('<div class="ball"></div>', mx, my + 70, 10, () => babyResponded('touch'));
+      ball.classList.add('prop');
+      await anim(ball, [{ transform: 'translate(-50%,-50%) scale(1) rotate(0)' }, { transform: `translate(calc(-50% + ${innerWidth / 2 - mx}px), calc(-50% + ${innerHeight * 0.78 - my - 70}px)) scale(2.2) rotate(540deg)` }], 1400, 'ease-out');
+      say(pick(['{N}야, 몽이한테 공 줘~', '공 톡 쳐 줄래?', '{N}가 던져 줘~']));
+      const r = await waitResp(6000); if (stopped()) { ball.remove(); break; }
+      await anim(ball, [{ transform: `translate(calc(-50% + ${innerWidth / 2 - mx}px), calc(-50% + ${innerHeight * 0.78 - my - 70}px)) scale(2.2) rotate(540deg)` }, { transform: 'translate(-50%,-50%) scale(1) rotate(0)' }], 1000, 'ease-in');
+      ball.remove(); sfx('boing'); pose('bounce', 1100); sparkle(...mongCenter(), r ? 12 : 4);
+      await say(r ? pick(['{N}가 줬다! 고마워~', '우와, 잘 던진다!', '받았다! 또 해 볼까?']) : '몽이가 가져갈게~ 다시 간다!');
+    }
+  },
+  async animal() {
+    for (let n = 0; n < 2 && !stopped(); n++) {
+      const [em, nm, snd] = pick(ANIMALS), W = innerWidth, H = innerHeight, y = H * 0.22;
+      const el = prop(em, 0, y, Math.min(140, W * 0.3)); el.classList.add('prop');
+      const at = x => `translate(calc(-50% + ${x}px), -50%)`;
+      el.style.transform = at(-90);
+      say(`우와! ${nm}가 왔어! ${snd}`);
+      const steps = 6; let prev = -90;
+      for (let i = 1; i <= steps && !stopped(); i++) {
+        const x = -90 + (W + 180) * i / steps;
+        look(((i / steps) - 0.5) * 18, -6);
+        await anim(el, [{ transform: at(prev) }, { transform: `translate(calc(-50% + ${(prev + x) / 2}px), calc(-50% - 50px))` }, { transform: at(x) }], 650);
+        prev = x;
+        if (i === 3) { pose('bounce', 1000); say(snd); }
+      }
+      el.remove(); look(0, 0); await wait(400);
+    }
+  },
+  async dance() {
+    await say('춤추자! 신나게~');
+    pose('dance'); voiceOut++;
+    const beat = 0.5, t0 = AC.currentTime + 0.1, notes = [523, 587, 659, 784, 880];
+    for (let i = 0; i < 20; i++) {
+      const t = t0 + i * beat;
+      const o = AC.createOscillator(), g = AC.createGain(); o.type = 'sine'; o.connect(g); g.connect(master);
+      o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(50, t + 0.15);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.6, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2); o.start(t); o.stop(t + 0.22);
+      if (i % 2 === 0) singNote(t, pick(notes), beat * 0.9, pick(['a', 'o', 'u']));
+    }
+    for (let i = 0; i < 10 && !stopped(); i++) {
+      const b = bounds(); moveTo((Math.random() - 0.5) * 2 * b.x, (Math.random() - 0.5) * b.y, { ms: 900, hop: 70 });
+      sparkle(innerWidth * Math.random(), innerHeight * 0.3 * Math.random() + 40, 5, ['🎉', '🎈', '⭐', '🎵']);
+      await wait(1000);
+    }
+    voiceOut = Math.max(0, voiceOut - 1); mongEl.classList.remove('dance'); muteUntil = performance.now() + 600;
+    await moveTo(0, 0); await say(pick(['신난다! {N}도 춤 잘 춘다~', '와아~ 재밌었다!']));
+  },
+  async hide() {
+    const [em, nm] = pick(TOYS), W = innerWidth, H = innerHeight, x = W * 0.5, y = H * 0.2;
+    const toy = prop(em, x, y, Math.min(120, W * 0.28)); toy.classList.add('prop');
+    sfx('ding'); await say(`${nm} 봐! 안녕~`); if (stopped()) return clearProps();
+    const cv = prop('<div class="cover"></div>', x, y - 200, 10); cv.classList.add('prop');
+    await anim(cv, [{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(-50%,calc(-50% + 200px))' }], 700, 'ease-in');
+    await say(`${nm} 어디 갔지~?`);
+    const r = await waitResp(3500);
+    await anim(cv, [{ transform: 'translate(-50%,calc(-50% + 200px))' }, { transform: 'translate(-50%,calc(-50% - 260px))' }], 500, 'ease-out');
+    toy.animate([{ transform: 'translate(-50%,-50%) scale(1)' }, { transform: 'translate(-50%,-60%) scale(1.3)' }, { transform: 'translate(-50%,-50%) scale(1)' }], { duration: 500 });
+    sfx('boing'); sparkle(x, y, 14);
+    await say(r ? `맞아! ${nm} 여기 있다! {N} 똑똑하다~` : `여기 있다! 까꿍!`);
+    await wait(800); clearProps();
+  },
+  async stars() {
+    await say('반짝반짝 별 잡자!');
+    let got = 0; const W = innerWidth, H = innerHeight;
+    for (let i = 0; i < 10 && !stopped(); i++) {
+      const x = W * (0.1 + Math.random() * 0.8);
+      const s = prop('⭐', x, -50, 56, (el) => { got++; sfx('ding'); const r = el.getBoundingClientRect(); sparkle(r.left + 28, r.top + 28, 8); el.remove(); babyResponded('touch'); });
+      s.classList.add('prop');
+      s.animate([{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: `translate(-50%, ${H + 100}px) rotate(360deg)` }], { duration: 4200 + Math.random() * 1500, easing: 'linear', fill: 'forwards' }).finished.then(() => s.remove()).catch(() => {});
+      if (i % 3 === 1) { moveTo(clampX(x - W / 2), -bounds().y, { ms: 600, hop: 90 }).then(() => { sfx('ding'); sparkle(...mongCenter(), 5, ['⭐']); }); say(pick(['냠! 몽이도 잡았다!', '잡았다!'])); }
+      await wait(800);
+    }
+    await wait(3000); clearProps(); await moveTo(0, 0);
+    await say(got ? `별 ${got}개 잡았다! 반짝반짝~` : '별님 안녕~ 반짝반짝~');
+  },
+  async clap() {
+    pose('clap'); await say('짝짜꿍 하자! 짝짜꿍~ 짝짜꿍~');
+    for (let i = 0; i < 6; i++) { setTimeout(() => { clapSound(AC.currentTime); sparkle(...mongCenter(), 3, ['👏', '✨']); }, 100 + i * 450); }
+    await wait(2900); mongEl.classList.remove('clap');
+    pose('shake'); await say('도리도리~ 도리도리~'); await wait(1200); mongEl.classList.remove('shake');
+    pose('hooray'); sparkle(...mongCenter(), 10, ['🙌', '⭐']); await say('만세~!'); await wait(900); mongEl.classList.remove('hooray');
+    pose('wave'); await say('빠이빠이~ 하고 손 흔들기!'); await wait(1200); mongEl.classList.remove('wave');
+  },
+  async song() {
+    const k = pick(['star', 'play', 'peek']);
+    await say(`{N}야, 몽이가 노래 불러 줄게. ${T(SONGS[k].title)}!`);
+    pose('sway'); await sing(k); mongEl.classList.remove('sway');
+    sparkle(...mongCenter(), 10, ['🎵', '🎶', '👏']);
+    await say(pick(['짝짝짝! 노래 끝~', '재밌었어? 또 부를까?']));
+  },
+  async lullaby() {
+    document.body.classList.add('dim'); pose('sway');
+    await say('{N}야, 자장가 불러 줄게.', { pitch: 1.1, rate: 70 }); await sing('lullaby');
+    mongEl.classList.remove('sway'); document.body.classList.toggle('dim', dimOn());
+  },
+  async chat() { pose('bounce', 1100); await say(pick(CHATS)); await waitResp(3000); },
+  async clip() {
+    const cl = await clipList();
+    if (cl.length) { const c = pick(cl); await say(`{N}야, 들어 봐~ ${c.name}!`); pose('sway'); await playClip(c.id); mongEl.classList.remove('sway'); }
+    else return ACTS.chat();
+  },
+  async bye() { pose('wave'); await moveTo(0, 0, { s: 1.1 }); await say('{N}야, 오늘 몽이랑 재밌었어! 이제 엄마 아빠랑 놀자~ 빠이빠이~'); mongEl.classList.remove('wave'); await moveTo(0, 0, { s: 1 }); },
+};
+async function act(what) {
+  if (ended || cryMode || !ACTS[what]) return;
+  busy++; songStop = false; lastActAt = Date.now(); curAct = what === 'bye' || what === 'greet' ? null : what;
+  if (curAct) { actStat(curAct).runs++; save(); }
+  try { await ACTS[what](); if (what !== 'bye') logEvent({ kind: 'play', what }); }
+  catch (e) { console.warn(e); }
+  finally { busy = Math.max(0, busy - 1); curAct = null; muteUntil = performance.now() + 600; markServe(); lastActAt = Date.now(); clearProps(); }
+  await wait(800);
 }
 async function program() {
   while (!ended) {
-    await wait(500);
+    await wait(400);
     if (ended) break;
     if (busy || cryMode || utt) continue;
     const quiet = Date.now() - Math.max(lastBabyAt, lastActAt);
-    if (quiet > S.idle * 1000) { const a = agenda(); await act(a[agendaIdx++ % a.length]); }
+    if (quiet > S.gap * 1000) await act(nextAct());
   }
 }
 
@@ -748,7 +985,7 @@ setInterval(() => {
 async function endSession() {
   if (ended || ending) return; ending = true;
   songStop = true; speechSynthesis.cancel(); clearCry(); await wait(400);
-  busy = 0; songStop = false; await act('bye'); ended = true; ending = false;
+  busy = 0; voiceOut = 0; songStop = false; clearProps(); await act('bye'); ended = true; ending = false;
   const d = day(); d.minutes += Math.round((Date.now() - sessStart) / 60000); save();
   try { wakeLock && wakeLock.release(); } catch (e) {}
   const ev = d.events.filter(e => e.ts >= sessStart);
@@ -821,21 +1058,23 @@ document.querySelectorAll('#cmdRow .chip').forEach(b => b.onclick = async () => 
   if (ended) return;
   if (c === 'bye') return endSession();
   clearCry(); songStop = true; speechSynthesis.cancel(); await wait(400);
-  busy = 0; songStop = false;
-  act({ song: 'song', lullaby: 'lullaby', peek: 'peek', animal: 'animal', clap: 'clap', name: 'name', clip: 'clip' }[c]);
+  busy = 0; voiceOut = 0; songStop = false; clearProps();
+  act(c);
 });
-document.getElementById('mong').addEventListener('pointerdown', async () => {     // {N}가 화면을 만지면
-  if (ended || busy || cryMode) return;
-  lastBabyAt = Date.now(); logEvent({ kind: 'touch' });
-  const m = document.getElementById('mong'); m.classList.add('bounce'); setTimeout(() => m.classList.remove('bounce'), 1100);
-  busy++; try { await say(pick(['히히, 간지러워~!', '우와, {N}가 몽이 만졌다!', '톡톡! 안녕~'])); } finally { busy=Math.max(0,busy-1); }
+document.getElementById('mong').addEventListener('pointerdown', async (ev) => {     // {N}가 몽이를 만지면
+  if (ended || cryMode) return;
+  ev.stopPropagation();
+  sparkle(ev.clientX, ev.clientY, 10, ['💖', '✨', '😆']); sfx('boing'); pose('bounce', 1100);
+  if (Date.now() - lastTouchLog > 1500) { lastTouchLog = Date.now(); logEvent({ kind: 'touch', act: curAct }); }
+  const waited = !!respWaiter; babyResponded('touch');
+  if (!waited && !voiceOut) say(pick(['히히, 간지러워~!', '우와, {N}가 몽이 만졌다!', '톡톡! 안녕~', '꺄르르~']));
 });
 // 설정
 const bind = (id, key, ev = 'input', conv = v => +v) => { const el = document.getElementById(id);
   if (el.type === 'checkbox') el.checked = S[key]; else el.value = S[key];
   el.addEventListener(ev, () => { S[key] = el.type === 'checkbox' ? el.checked : conv(el.value); saveSettings();
     if (key === 'dim') document.body.classList.toggle('dim', dimOn()); }); };
-bind('sens', 'sens'); bind('rate', 'rate'); bind('idleSel', 'idle', 'change'); bind('dimChk', 'dim', 'change'); bind('thinkChk', 'think', 'change');
+bind('sens', 'sens'); bind('rate', 'rate'); bind('idleSel', 'gap', 'change'); bind('dimChk', 'dim', 'change'); bind('thinkChk', 'think', 'change');
 document.getElementById('voiceSel').addEventListener('change', e => { S.voice = e.target.value; saveSettings(); });
 let micTesting = false;
 document.getElementById('testMic').onclick = async () => {
@@ -858,7 +1097,9 @@ async function clipGet(id) { const db = await idb(); return new Promise(r => { c
 async function playClip(id) {
   const c = await clipGet(id); if (!c) return;
   const au = new Audio(URL.createObjectURL(c.blob)); au.volume = nightMode() ? 0.7 : 1;
+  voiceOut++;
   await new Promise(r => { au.onended = r; au.onerror = r; au.play().catch(r); const iv = setInterval(() => { if (songStop || ended) { au.pause(); clearInterval(iv); r(); } }, 200); });
+  voiceOut = Math.max(0, voiceOut - 1); muteUntil = performance.now() + 600;
 }
 async function renderClips() {
   const cl = await clipList(), box = document.getElementById('clips'); box.innerHTML = '';
@@ -905,7 +1146,9 @@ function weekStats(endDate) {                       // endDate 포함 7일
   const hours = {}; ev.filter(e => ['babble','single','laugh','squeal'].includes(e.kind)).forEach(e => { const h = new Date(e.ts).getHours(); hours[h] = (hours[h] || 0) + 1; });
   const peakH = Object.entries(hours).sort((a, b) => b[1] - a[1])[0];
   const pitches = ev.filter(e => e.pitch > 0 && e.kind !== 'cry').map(e => e.pitch).sort((a, b) => a - b);
-  return { sessions, minutes, turns, best, babble: c('babble'), single: c('single'), laugh: c('laugh'), squeal: c('squeal'),
+  const fav = {}; ev.filter(e => e.act && ['babble','single','laugh','squeal','touch'].includes(e.kind)).forEach(e => fav[e.act] = (fav[e.act] || 0) + 1);
+  const favTop = Object.entries(fav).sort((a, b) => b[1] - a[1]).slice(0, 3).map(f => `${ACT_NAMES[f[0]] || f[0]} ${f[1]}`).join(' · ');
+  return { favTop, sessions, minutes, turns, best, babble: c('babble'), single: c('single'), laugh: c('laugh'), squeal: c('squeal'),
     fuss: c('fuss'), cry: c('cry'), touch: c('touch'), avgSyl, long: bab.filter(e => e.syl >= 3).length, heard,
     peakH: peakH ? +peakH[0] : null, pmin: pitches[0] || 0, pmax: pitches[pitches.length - 1] || 0, voc: c('babble') + c('single') };
 }
@@ -962,6 +1205,7 @@ function drawReport(endDate, H) {
   [`평균 ${w.avgSyl ? w.avgSyl.toFixed(1) : '-'}음절 · 3음절 이상 반복 옹알이 ${w.long}번`,
    `한마디 ${w.single} · 꺅 ${w.squeal} · 칭얼 ${w.fuss} · 울음 ${w.cry} · 화면 만지기 ${w.touch}`,
    `목소리 높이 ${w.pmin ? w.pmin + '~' + w.pmax + 'Hz' : '-'}${w.peakH !== null ? ' · 제일 수다스러운 시간 ' + w.peakH + '시' : ''}`,
+   `제일 반응 좋았던 놀이: ${w.favTop || '-'}`,
    `엄마·아빠가 들은 소리: ${heardTop || '아직 없음 (부모 화면에서 눌러 주세요)'}`
   ].forEach(l => wrap(l, W - 120).forEach(x => { g.fillText(x, 60, y); y += 48; }));
   y += 30;
