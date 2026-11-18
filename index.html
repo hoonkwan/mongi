@@ -651,7 +651,7 @@ function prop(html, x, y, size, tap) {
 }
 const anim = (el, kf, ms, ease = 'ease-in-out') => el.animate(kf, { duration: ms, easing: ease, fill: 'forwards' }).finished.catch(() => {});
 
-/* 이아 반응 받기 */
+/* 아이 반응 받기 */
 let curAct = null, respWaiter = null, lastInterject = 0, lastTouchLog = 0;
 function waitResp(ms) { return new Promise(r => { respWaiter = r; setTimeout(() => { if (respWaiter === r) { respWaiter = null; r(false); } }, ms); }); }
 function babyResponded(how) {
