@@ -249,6 +249,7 @@ select,input[type=range]{max-width:58%}
   <label class="set">화면 어둡게 (밤) <input type="checkbox" id="dimChk"></label>
   <label class="set">소리 해석 자막 보이기 <input type="checkbox" id="thinkChk" checked></label>
   <div class="row" style="justify-content:flex-start"><button class="chip" id="testMic">마이크 테스트</button><span class="small" id="micLvl"></span></div>
+  <div class="row" style="justify-content:flex-start"><button class="chip" id="testVoice">목소리 테스트</button><span class="small" id="voiceStat"></span></div>
 
   <h2>꼭 알아 두기</h2>
   <div class="small">
@@ -264,7 +265,7 @@ select,input[type=range]{max-width:58%}
 'use strict';
 /* ============ 기본 정보 ============ */
 /* 아이 이름·생일은 이 기기에만 저장 (코드에 없음) */
-const APP_VERSION = 6;
+const APP_VERSION = 7;
 const PROF_KEY = 'iaFriend.profile';
 document.getElementById('verLine').textContent = `버전 ${APP_VERSION}`;
 (async function selfUpdate() {                       // 열 때마다 새 버전이 있는지 확인하고 있으면 바로 바꿈
@@ -345,33 +346,54 @@ function pickVoices() {
     sel.appendChild(o);
   });
   // 사람 같은 음성 우선: Natural(Edge) > Google > Yuna·Premium > 기본
-  const score = v => (/natural|online/i.test(v.name) ? 50 : 0) + (/google/i.test(v.name) ? 30 : 0) +
-    (/yuna|premium|enhanced|siri|sunhi|seoyeon|jimin/i.test(v.name) ? 25 : 0) + (/heami/i.test(v.name) ? -10 : 0);
+  const score = v => (v.localService ? 100 : 0) + (v.default ? 5 : 0) + (/google/i.test(v.name) ? 10 : 0) +
+    (/yuna|premium|enhanced|siri|sunhi|seoyeon|jimin/i.test(v.name) ? 20 : 0);
   const best = [...VOICES].sort((a, b) => score(b) - score(a))[0];
   if (!S.voiceManual || !VOICES.find(v => v.name === S.voice)) S.voice = (best || {}).name || '';
   sel.value = S.voice;
-  document.getElementById('startNote').textContent = VOICES.length ? '' :
-    '한국어 음성이 없어요. Windows 설정 → 시간 및 언어 → 음성에서 한국어 음성을 추가해 주세요.';
+  document.getElementById('startNote').textContent = '';
 }
 speechSynthesis.onvoiceschanged = pickVoices; pickVoices();
 
 let busy = 0, muteUntil = 0, voiceOut = 0;   // busy=놀이 진행 중, voiceOut=몽이가 소리 내는 중
 const mouth = document.getElementById('mouth');
-function say(text, { pitch = 1.12, rate } = {}) {
+let ttsFails = 0, ttsLastErr = '';
+const subEl = () => document.getElementById('lyric');
+function say(text, { pitch = 1.12, rate, force } = {}) {
   return new Promise(res => {
-    if (ended) return res();
+    if (ended && !force) return res();
     busy++; voiceOut++;
     const spoken = T(text).replace(/[~～〜]+/g, '').replace(/[·…「」『』()]/g, ' ').replace(/\s+/g, ' ').trim();   // 기호를 소리 내 읽지 않게
-    const u = new SpeechSynthesisUtterance(spoken);
-    const v = VOICES.find(v => v.name === S.voice); if (v) u.voice = v;
-    u.lang = 'ko-KR'; u.pitch = pitch; u.rate = (rate || S.rate) / 100;
-    u.volume = nightMode() ? 0.7 : 1;
+    const sub = subEl(); if (sub && !sub.dataset.song) sub.textContent = spoken;                         // 몽이 말 자막
     let talk = setInterval(() => { mouth.setAttribute('ry', 5 + Math.random() * 16); mouth.setAttribute('rx', 14 + Math.random() * 6); }, 110);
-    let fin = false;
-    const done = () => { if (fin) return; fin = true; clearTimeout(guard); clearInterval(talk); mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16); busy=Math.max(0,busy-1); voiceOut = Math.max(0, voiceOut - 1); muteUntil = performance.now() + 600; markServe(); res(); };
-    u.onend = done; u.onerror = done;
-    const guard = setTimeout(() => { try { speechSynthesis.cancel(); } catch (e) {} done(); }, 2500 + T(text).length * 260);  // 폰에서 끝 신호가 안 와도 멈추지 않게
-    speechSynthesis.cancel(); speechSynthesis.speak(u);
+    let fin = false, guard = null, startT = null;
+    const done = () => {
+      if (fin) return; fin = true; clearTimeout(guard); clearTimeout(startT); clearInterval(talk);
+      mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16);
+      busy = Math.max(0, busy - 1); voiceOut = Math.max(0, voiceOut - 1); muteUntil = performance.now() + 600; markServe();
+      setTimeout(() => { const s2 = subEl(); if (s2 && s2.textContent === spoken && !s2.dataset.song) s2.textContent = ''; }, 1500);
+      res();
+    };
+    const speakOnce = (useVoice, retry) => {
+      const u = new SpeechSynthesisUtterance(spoken);
+      const v = useVoice && VOICES.find(v => v.name === S.voice); if (v) u.voice = v;
+      u.lang = 'ko-KR'; u.pitch = pitch; u.rate = (rate || S.rate) / 100; u.volume = 1;
+      let started = false;
+      u.onstart = () => { started = true; ttsFails = 0; clearTimeout(startT); };
+      u.onend = () => { if (!started && retry) return fallback('끝 신호만 옴'); done(); };
+      u.onerror = (e) => { ttsLastErr = e.error || 'error'; if (retry && e.error !== 'interrupted' && e.error !== 'canceled') return fallback(ttsLastErr); done(); };
+      try { speechSynthesis.resume(); speechSynthesis.speak(u); } catch (e) { ttsLastErr = e.message; return retry ? fallback(e.message) : done(); }
+      // 시작 신호가 1.8초 안에 안 오면 기본 음성으로 다시
+      startT = setTimeout(() => { if (!started && retry) fallback('시작 안 됨'); }, 1800);
+    };
+    const fallback = (why) => {
+      ttsFails++; ttsLastErr = why; clearTimeout(startT);
+      try { speechSynthesis.cancel(); } catch (e) {}
+      setTimeout(() => speakOnce(false, false), 80);
+    };
+    guard = setTimeout(() => { try { speechSynthesis.cancel(); } catch (e) {} done(); }, 3500 + spoken.length * 300);
+    if (speechSynthesis.speaking || speechSynthesis.pending) { try { speechSynthesis.cancel(); } catch (e) {} setTimeout(() => speakOnce(true, true), 80); }
+    else speakOnce(true, true);
   });
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -459,7 +481,7 @@ let songStop = false;
 async function sing(key) {
   const s = SONGS[key]; if (!s || ended) return;
   busy++; voiceOut++; songStop = false;
-  songBus = AC.createGain(); songBus.connect(master); const myBus = songBus;
+  songBus = AC.createGain(); songBus.connect(master); const myBus = songBus; lyricEl.dataset.song = '1';
   const beat = 60 / s.bpm, mong = document.getElementById('mong');
   let t = AC.currentTime + 0.25; const t0 = t, timers = [];
   s.lines.forEach((ln, li) => {
@@ -486,7 +508,7 @@ async function sing(key) {
   timers.forEach(clearTimeout);
   myBus.gain.setTargetAtTime(0, AC.currentTime, 0.05); setTimeout(() => myBus.disconnect(), 400); if (songBus === myBus) songBus = null;
   mong.classList.remove('hide', 'clap', 'shake'); mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16);
-  lyricEl.textContent = ''; busy=Math.max(0,busy-1); voiceOut = Math.max(0, voiceOut - 1); muteUntil = performance.now() + 800; markServe();
+  lyricEl.textContent = ''; delete lyricEl.dataset.song; busy=Math.max(0,busy-1); voiceOut = Math.max(0, voiceOut - 1); muteUntil = performance.now() + 800; markServe();
   logEvent({ kind: 'song', title: s.title });
 }
 
@@ -966,7 +988,11 @@ const nightMode = () => { const h = new Date().getHours(); return h >= 20 || h <
 const dimOn = () => S.dim;
 document.querySelectorAll('#lenRow .chip').forEach(b => b.onclick = () => {
   document.querySelectorAll('#lenRow .chip').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); sessMin = +b.dataset.min; });
-document.getElementById('go').onclick = () => startSession();
+function unlockAudio() {
+  try { const u = new SpeechSynthesisUtterance('안녕'); u.lang = 'ko-KR'; u.volume = 0.01; speechSynthesis.speak(u); } catch (e) {}
+  try { if (!AC) initAudio(); AC.resume(); } catch (e) {}
+}
+document.getElementById('go').onclick = () => { unlockAudio(); startSession(); };
 document.getElementById('again').onclick = () => { document.getElementById('ended').classList.remove('on'); document.getElementById('start').style.display = 'flex'; };
 async function startSession() {
   try {
@@ -1085,6 +1111,12 @@ const bind = (id, key, ev = 'input', conv = v => +v) => { const el = document.ge
     if (key === 'dim') document.body.classList.toggle('dim', dimOn()); }); };
 bind('sens', 'sens'); bind('rate', 'rate'); bind('idleSel', 'gap', 'change'); bind('dimChk', 'dim', 'change'); bind('thinkChk', 'think', 'change');
 document.getElementById('voiceSel').addEventListener('change', e => { S.voice = e.target.value; S.voiceManual = true; saveSettings(); say('안녕! 나 몽이야. 이 목소리 어때?'); });
+document.getElementById('testVoice').onclick = () => {
+  const st = document.getElementById('voiceStat');
+  st.textContent = `한국어 음성 ${VOICES.length}개 · 사용: ${(S.voice || '기본').replace('Microsoft ', '')}`;
+  unlockAudio();
+  say('안녕! 나 몽이야. 내 목소리 들려?', { force: true }).then(() => { st.textContent += ttsLastErr ? ` · 문제: ${ttsLastErr}` : ' · 정상'; ttsLastErr = ''; });
+};
 let micTesting = false;
 document.getElementById('testMic').onclick = async () => {
   try { if (!AC) initAudio(); await AC.resume(); if (!analyser) await initMic(); } catch (e) { document.getElementById('micLvl').textContent = '마이크 허용 필요'; return; }
