@@ -111,6 +111,7 @@ select,input[type=range]{max-width:58%}
 <div id="start">
   <h1>몽이 — {N} 친구</h1>
   <p id="ageLine"></p>
+  <p style="font-size:12px;margin:0">버전 5 · 놀이 12가지</p>
   <p>엄마·아빠가 옆에 있을 때 켜 주세요. 몽이는 {N} 소리를 듣고 대답하고, 말을 걸고, 노래를 불러요.<br>
      마이크 소리는 이 기기 밖으로 나가지 않아요. 녹음은 저장하지 않아요(목소리 상자만 예외).</p>
   <div class="prof">
@@ -244,7 +245,7 @@ select,input[type=range]{max-width:58%}
   <h2>설정</h2>
   <label class="set">마이크 민감도 <input type="range" id="sens" min="1" max="10" value="5"></label>
   <label class="set">몽이 목소리 <select id="voiceSel"></select></label>
-  <label class="set">말 빠르기 <input type="range" id="rate" min="60" max="110" value="85"></label>
+  <label class="set">말 빠르기 <input type="range" id="rate" min="70" max="120" value="95"></label>
   <label class="set">놀이 사이 쉬는 시간 <select id="idleSel">
     <option value="3">3초 (활발)</option><option value="5">5초</option><option value="10">10초</option><option value="20">20초 (차분)</option></select></label>
   <label class="set">화면 어둡게 (밤) <input type="checkbox" id="dimChk"></label>
@@ -301,7 +302,7 @@ function day() {
   DB.days[k] = DB.days[k] || { events: [], turns: 0, bestChain: 0, sessions: 0, minutes: 0 };
   return DB.days[k];
 }
-const S = Object.assign({ gap: 5, sens: 8, rate: 85, dim: false, think: true, voice: '' }, DB.settings);
+const S = Object.assign({ gap: 5, sens: 8, rate: 95, dim: false, think: true, voice: '' }, DB.settings);
 function saveSettings() { DB.settings = S; save(); }
 
 /* ============ 오디오 ============ */
@@ -331,8 +332,11 @@ function pickVoices() {
     o.textContent = v.name.replace('Microsoft ', '') + (v.localService ? '' : ' (인터넷)');
     sel.appendChild(o);
   });
-  const local = VOICES.find(v => v.localService);
-  if (!S.voice || !VOICES.find(v => v.name === S.voice)) S.voice = (local || VOICES[0] || {}).name || '';
+  // 사람 같은 음성 우선: Natural(Edge) > Google > Yuna·Premium > 기본
+  const score = v => (/natural|online/i.test(v.name) ? 50 : 0) + (/google/i.test(v.name) ? 30 : 0) +
+    (/yuna|premium|enhanced|siri|sunhi|seoyeon|jimin/i.test(v.name) ? 25 : 0) + (/heami/i.test(v.name) ? -10 : 0);
+  const best = [...VOICES].sort((a, b) => score(b) - score(a))[0];
+  if (!S.voiceManual || !VOICES.find(v => v.name === S.voice)) S.voice = (best || {}).name || '';
   sel.value = S.voice;
   document.getElementById('startNote').textContent = VOICES.length ? '' :
     '한국어 음성이 없어요. Windows 설정 → 시간 및 언어 → 음성에서 한국어 음성을 추가해 주세요.';
@@ -341,11 +345,12 @@ speechSynthesis.onvoiceschanged = pickVoices; pickVoices();
 
 let busy = 0, muteUntil = 0, voiceOut = 0;   // busy=놀이 진행 중, voiceOut=몽이가 소리 내는 중
 const mouth = document.getElementById('mouth');
-function say(text, { pitch = 1.45, rate } = {}) {
+function say(text, { pitch = 1.12, rate } = {}) {
   return new Promise(res => {
     if (ended) return res();
     busy++; voiceOut++;
-    const u = new SpeechSynthesisUtterance(T(text));
+    const spoken = T(text).replace(/[~～〜]+/g, '').replace(/[·…「」『』()]/g, ' ').replace(/\s+/g, ' ').trim();   // 기호를 소리 내 읽지 않게
+    const u = new SpeechSynthesisUtterance(spoken);
     const v = VOICES.find(v => v.name === S.voice); if (v) u.voice = v;
     u.lang = 'ko-KR'; u.pitch = pitch; u.rate = (rate || S.rate) / 100;
     u.volume = nightMode() ? 0.7 : 1;
@@ -358,7 +363,8 @@ function say(text, { pitch = 1.45, rate } = {}) {
   });
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
-const pick = a => a[Math.floor(Math.random() * a.length)];
+const _last = new WeakMap();
+const pick = a => { let x, n = 0; do { x = a[Math.floor(Math.random() * a.length)]; } while (a.length > 1 && x === _last.get(a) && ++n < 5); _last.set(a, x); return x; };  // 같은 말 연달아 안 하기
 
 /* ============ 노래 (멜로디 + 모음 노래 목소리) ============ */
 const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -370,8 +376,10 @@ function vowelOf(syl) { const c = syl.charCodeAt(0) - 0xAC00; if (c < 0 || c > 1
 const MOUTH = { a: [18, 18], e: [20, 10], i: [22, 6], o: [12, 14], u: [9, 9], eo: [16, 14], eu: [20, 6] };
 
 let songBus = null;
+const SING_VOICE = false;   // 합성 노래 목소리는 어색해서 끔 — 오르골 멜로디만
 function singNote(t, f, dur, v) {
   const out = songBus || master;
+  if (SING_VOICE) {
   const g = AC.createGain(); g.gain.value = 0; g.connect(out);
   const [f1, f2] = VF[v] || VF.a;
   const bp1 = AC.createBiquadFilter(); bp1.type = 'bandpass'; bp1.frequency.value = f1; bp1.Q.value = 6;
@@ -387,10 +395,11 @@ function singNote(t, f, dur, v) {
   g.gain.linearRampToValueAtTime(pk, t + 0.07); g.gain.setValueAtTime(pk, end - 0.07);
   g.gain.linearRampToValueAtTime(0, end - 0.01);
   osc.start(t); lfo.start(t); osc.stop(end); lfo.stop(end);
+  }
   // 오르골
   const b = AC.createOscillator(); b.type = 'triangle'; b.frequency.value = f * 2;
   const bg = AC.createGain(); bg.connect(out);
-  bg.gain.setValueAtTime(0.0001, t); bg.gain.exponentialRampToValueAtTime(nightMode() ? 0.08 : 0.14, t + 0.01);
+  bg.gain.setValueAtTime(0.0001, t); bg.gain.exponentialRampToValueAtTime(0.32, t + 0.01);
   bg.gain.exponentialRampToValueAtTime(0.0001, t + Math.min(1.2, dur + 0.4));
   b.connect(bg); b.start(t); b.stop(t + 1.3);
 }
@@ -574,34 +583,33 @@ function interpret(kind, a) {
 
 /* ============ 대답 만들기 ============ */
 const EXPAND = {
-  바: ['바바! 바나나? 바나나 맛있지~', '바바바! 빠이빠이?'],
-  빠: ['빠빠! 아빠? 아빠 여기 있지~', '빠빠빠! 아빠 불렀어?'],
-  마: ['마마! 엄마? 엄마 여기 있어~', '맘마? 맘마 먹을까?'],
-  다: ['다다! 다 했어? 우와~', '다다다! 다 먹었어?'],
-  가: ['가가! 가자~ 어디 갈까?', '까꿍? 가가 까꿍!'],
-  아: ['아~! 아, 그랬구나~', '아아? 정말~?'],
-  냠: ['냠냠! 맛있어? 냠냠냠~', '냠냠! 맘마 먹자~'],
-  응: ['응! 응~ 그래그래~', '응? {N}야 불렀어?'],
-  멍: ['멍멍! 멍멍이? 멍멍이 어딨지~', '멍멍! 강아지가 멍멍~'],
-  이: ['이이! {N}? 맞아 {N}야~', '이이이! 이거?'],
+  바: ['바바! 바나나? 바나나 먹고 싶어?', '바바바! 빠이빠이 할까?'],
+  빠: ['빠빠! 아빠? 아빠 불렀어?', '빠빠빠! 아빠 여기 있지!'],
+  마: ['마마! 엄마? 엄마 여기 있어!', '맘마? 맘마 먹을까?'],
+  다: ['다다! 다 했어? 우와!', '다다다! 다 먹었어?'],
+  가: ['가가! 가자? 어디 갈까?', '까꿍? 가가, 까꿍!'],
+  아: ['아! 그랬구나!', '아아? 진짜?'],
+  냠: ['냠냠! 맛있어?', '냠냠! 맘마 먹자!'],
+  응: ['응! 그래그래!', '응? 나 불렀어?'],
+  멍: ['멍멍! 멍멍이 어딨지?', '멍멍! 강아지가 멍멍 했네!'],
+  이: ['이이! 우리 {N}? 맞아!', '이거? 이거 줄까?'],
 };
 function echoOf(a) { const n = Math.min(4, Math.max(1, a.syl)); return '아'.repeat(n); }
 async function respond(kind, a) {
-  const e = echoOf(a), q = a.contour === 'up' ? '?' : (a.contour === 'down' ? '~' : '!');
   if (kind === 'babble' || kind === 'single') {
     const lines = a.contour === 'up'
-      ? [`${e}${q} {N}가 몽이한테 물어봤어?`, `${e}${q} 정말~? 그랬구나!`, `${e}${q} 또 말해 줘~`]
+      ? ['응? 뭐라고? 그랬어?', '어머, 진짜? 그랬구나!', '응응, 또 얘기해 줘!', '오, 그래? 우와!']
       : a.contour === 'down'
-      ? [`${e}${q} 그렇구나~`, `${e}${q} 맞아 맞아~`, `우와, {N} 말 잘한다~ ${e}!`]
-      : [`${e}! 몽이도 ${e}!`, `${e}! {N} 목소리 예쁘다~`, `응! ${e}! 그랬어~?`];
-    if (kind === 'single') lines.push('응? {N}야, 몽이 불렀어?');
+      ? ['아, 그랬구나. 응응.', '맞아 맞아, 그치?', '우와, 우리 {N} 말 잘하네!']
+      : ['응! 나도 들었어!', '우와, 목소리 너무 예쁘다!', '그래그래, 알았어!'];
+    if (kind === 'single') lines.push('응? 나 불렀어?');
     await say(pick(lines));
   } else if (kind === 'laugh') {
-    await say(pick(['히히히! {N}가 웃었다~ 몽이도 좋아!', '까르르~ {N} 웃음소리 최고야!', '히히, 또 웃어 줘~']));
+    await say(pick(['히히, 재밌어?', '아이 좋아라! 까르르!', '우리 {N} 웃는 거 너무 예쁘다!']));
   } else if (kind === 'squeal') {
-    await say(pick(['꺄~! {N} 신났구나!', '우와~ {N} 목소리 크다! 신나~', '꺄아! 뭐가 좋아~?']));
+    await say(pick(['우와, 신났어?', '꺄! 좋아?', '오, 목소리 크다! 신나지?']));
   } else if (kind === 'fuss') {
-    await say(pick(['에구, 왜 그래~? 몽이 여기 있어.', '괜찮아 괜찮아~ 엄마 아빠 여기 있어.', '응~ 힘들었어? 토닥토닥.']), { pitch: 1.2, rate: 75 });
+    await say(pick(['왜, 무슨 일이야? 괜찮아.', '아이고 그랬어, 괜찮아 괜찮아.', '응, 힘들었어? 엄마 아빠 여기 있어.']), { pitch: 1.0, rate: 85 });
   }
 }
 
@@ -678,7 +686,7 @@ async function onUtterance(u, thr) {
     markServe(); hint('어른 목소리 들림');
     if (!busy && Date.now() - (onUtterance.lastAdult || 0) > 20000) {
       onUtterance.lastAdult = Date.now(); busy++;
-      try { pose('bounce', 1100); await say(pick(['응~ 몽이 여기 있어! {N}도 말해 볼까?', '그랬구나~ {N}야, 너도 말해 줘!', '응응! {N}야, 몽이랑 얘기하자~'])); } finally { busy = Math.max(0, busy - 1); lastActAt = Date.now(); }
+      try { pose('bounce', 1100); await say(pick(['응, 나 여기 있어! {N}도 얘기해 볼까?', '그치? {N}야, 너도 말해 봐!', '응응! 우리 같이 얘기하자!'])); } finally { busy = Math.max(0, busy - 1); lastActAt = Date.now(); }
     }
     return;
   }
@@ -699,7 +707,7 @@ async function onUtterance(u, thr) {
   if (busy) {                                           // 놀이 중이어도 짧게 바로 받아 줌
     if (!waited && Date.now() - lastInterject > 4000) {
       lastInterject = Date.now();
-      say(kind === 'laugh' ? pick(['히히히!', '까르르~ 좋아?']) : kind === 'squeal' ? pick(['꺄~!', '우와!']) : echoOf(a) + (a.contour === 'up' ? '?' : '!') + ' ' + pick(['그랬어?', '맞아!', '응!']));
+      say(kind === 'laugh' ? pick(['히히!', '좋아?']) : kind === 'squeal' ? pick(['우와!', '꺄!']) : pick(['응응!', '그랬어?', '어, 진짜?', '맞아!']));
     }
     return;
   }
@@ -717,7 +725,7 @@ async function crying() {
   showAlert('{N}가 울어요 — 안아 주세요' + (meaning[0] ? ' · ' + meaning[0] : ''), 0);
   try { if (navigator.vibrate) navigator.vibrate(300); } catch (e) {}
   await wait(400); busy++;
-  await say('{N}야, 괜찮아. 엄마 아빠 불러 줄게.', { pitch: 1.1, rate: 70 });
+  await say('{N}야 괜찮아, 엄마 아빠 금방 와.', { pitch: 1.0, rate: 85 });
   busy = Math.max(0, busy - 1);
   logEvent({ kind: 'alert', note: '울음 감지 — 어른 호출' });
 }
@@ -745,19 +753,18 @@ setInterval(() => {
 }, 2200);
 
 /* ============ 놀이 (몽이가 알아서, {N}가 좋아하는 걸 더 자주) ============ */
-const ANIMALS = [['🐶', '멍멍이', '멍멍! 멍멍!'], ['🐱', '야옹이', '야옹~ 야옹~'], ['🐮', '음매 소', '음매~ 음매~'],
-  ['🦆', '오리', '꽥꽥! 꽥꽥!'], ['🐷', '꿀꿀 돼지', '꿀꿀! 꿀꿀!'], ['🚗', '자동차', '빵빵! 빵빵!'], ['🐑', '양', '메에~ 메에~'], ['🐔', '꼬꼬닭', '꼬꼬댁 꼬꼬!']];
+const ANIMALS = [['🐶', '멍멍이', '멍멍! 멍멍!'], ['🐱', '야옹이', '야옹, 야옹!'], ['🐮', '소', '음매, 음매!'],
+  ['🦆', '오리', '꽥꽥! 꽥꽥!'], ['🐷', '돼지', '꿀꿀! 꿀꿀!'], ['🚗', '자동차', '빵빵! 빵빵!'], ['🐑', '양', '메에, 메에!'], ['🐔', '꼬꼬닭', '꼬꼬댁 꼬꼬!']];
 const TOYS = [['🧸', '곰돌이'], ['🐥', '삐약이'], ['🍌', '바나나'], ['🚗', '빵빵이'], ['🍎', '사과'], ['🐟', '물고기']];
-const CHATS = ['{N}야~ 몽이는 {N}가 제일 좋아!', '{N} 손 어디 있지? 여기 있네~ 짝짝!', '몽이 귀 봐 봐, 길~지? 쫑긋쫑긋!',
-  '{N} 발가락 꼼지락꼼지락~', '{N}야, 몽이한테 무슨 말 해 줄래?', '{N}야, 엄마 어디 있어? 아빠는 어디 있어?'];
+const CHATS = ['{N}야, 나는 {N}가 제일 좋아!', '{N} 손 어딨어? 여기 있네! 짝짝!', '내 귀 봐 봐, 길지? 쫑긋쫑긋!',
+  '{N} 발가락 꼼지락꼼지락!', '{N}야, 나한테 무슨 얘기 해 줄래?', '엄마 어딨어? 아빠는 어딨어?'];
 const ACT_NAMES = { peek: '까꿍', bubbles: '비눗방울', ball: '공 주고받기', animal: '동물 친구', dance: '춤추기', hide: '숨긴 장난감 찾기',
   name: '이름 부르기', clap: '짝짜꿍·도리도리', song: '노래', stars: '별 잡기', chat: '말 걸기', clip: '엄마·아빠 목소리', lullaby: '자장가' };
 let agendaIdx = 0, lastBabyAt = 0, lastActAt = 0, lastPicked = [];
 function nextAct() {
-  if (nightMode()) return pick(['lullaby', 'chat', 'clip', 'lullaby', 'name']);
   const pool = ['peek', 'bubbles', 'ball', 'animal', 'dance', 'hide', 'name', 'clap', 'stars', 'song', 'chat', 'clip'];
   const cand = pool.filter(k => !lastPicked.includes(k));
-  const wts = cand.map(k => { const s = actStat(k); const base = (s.resp + 1) / (s.runs + 2); return (k === 'song' || k === 'chat' || k === 'clip' ? 0.5 : 1) * (0.4 + base); });
+  const wts = cand.map(k => { const s = actStat(k); const base = (s.resp + 1) / (s.runs + 2); return (k === 'song' ? 0.25 : k === 'chat' || k === 'clip' ? 0.5 : 1) * (0.4 + base); });
   let r = Math.random() * wts.reduce((a, b) => a + b, 0), i = 0;
   while (r > wts[i]) r -= wts[i++];
   const k = cand[Math.min(i, cand.length - 1)];
@@ -767,13 +774,13 @@ function nextAct() {
 const stopped = () => songStop || ended || cryMode;
 
 const ACTS = {
-  async greet() { pose('wave', 2500); await moveTo(0, 0, { s: 1.1 }); await say('{N}야~ 안녕! 몽이 왔어! 반가워~'); await moveTo(0, 0, { s: 1 }); },
+  async greet() { pose('wave', 2500); await moveTo(0, 0, { s: 1.1 }); await say('{N}야 안녕! 나 몽이야, 반가워!'); await moveTo(0, 0, { s: 1 }); },
   async name() {
     look(0, 10); await moveTo(0, innerHeight * 0.04, { s: 1.28, hop: 20 });
-    await say('{N}야~!');
+    await say('{N}야!');
     const r = await waitResp(3500);
-    if (r) { sparkle(...mongCenter(), 14); pose('bounce', 1100); await say(pick(['대답했어? 우와~ 똑똑하다!', '{N}가 대답했다! 최고!'])); }
-    else { pose('wave', 1600); await say(pick(['몽이 여기 있어~ 안녕!', '{N}야, 몽이 봐~ 여기!'])); }
+    if (r) { sparkle(...mongCenter(), 14); pose('bounce', 1100); await say(pick(['어? 대답했어? 우와, 똑똑해!', '{N}가 대답했다! 최고!'])); }
+    else { pose('wave', 1600); await say(pick(['나 여기 있지롱! 안녕!', '{N}야, 여기 봐 여기!'])); }
     await moveTo(0, 0, { s: 1 });
   },
   async peek() {
@@ -781,22 +788,22 @@ const ACTS = {
     for (let i = 0; i < 3 && !stopped(); i++) {
       const side = pick(['left', 'right', 'bottom']), W = innerWidth, H = innerHeight;
       sfx('whoosh'); await moveTo(side === 'left' ? -W : side === 'right' ? W : 0, side === 'bottom' ? H : 0, { ms: 450, hop: 30 });
-      say(pick(['몽이 어디 있~게?', '어디 갔지~?', '없~다!']), { pitch: 1.3 });
+      say(pick(['나 어딨게?', '어디 갔지?', '없다!']));
       await waitResp(2300); if (stopped()) break;
       const from = pick(['left', 'right', 'bottom']);
       jumpTo(from === 'left' ? -W : from === 'right' ? W : 0, from === 'bottom' ? H : 0);
       await moveTo((Math.random() - 0.5) * bounds().x, 0, { ms: 500, hop: 80, s: 1.12 });
       sfx('boing'); sparkle(...mongCenter(), 14); pose('bounce', 1100);
-      await say('까꿍!', { pitch: 1.8 }); await wait(900);
+      await say('까꿍!', { pitch: 1.35 }); await wait(900);
     }
     await moveTo(0, 0, { s: 1 });
   },
   async bubbles() {
-    await say('비눗방울 놀이 하자! 후~');
+    await say('비눗방울 놀이 하자! 후우!');
     let popped = 0; const W = innerWidth, H = innerHeight;
     const make = () => {
       const sz = 70 + Math.random() * 70, x = W * (0.12 + Math.random() * 0.76);
-      const el = prop('', x, H + 60, 10, (b) => { popped++; sfx('pop'); const r = b.getBoundingClientRect(); sparkle(r.left + r.width / 2, r.top + r.height / 2, 7, ['✨', '💧', '⭐']); b.remove(); babyResponded('touch'); if (popped % 3 === 0) say(pick(['펑! 잘했어!', '우와, 또 터졌다!'])); });
+      const el = prop('', x, H + 60, 10, (b) => { popped++; sfx('pop'); const r = b.getBoundingClientRect(); sparkle(r.left + r.width / 2, r.top + r.height / 2, 7, ['✨', '💧', '⭐']); b.remove(); babyResponded('touch'); if (popped % 3 === 0) say(pick(['펑! 잘한다!', '우와, 또 터졌다!'])); });
       el.classList.add('prop', 'bubble'); el.style.width = el.style.height = sz + 'px';
       const sway = (Math.random() - 0.5) * 140;
       el.animate([{ transform: 'translate(-50%,0)' }, { transform: `translate(calc(-50% + ${sway}px), -${H * 0.55}px)` }, { transform: `translate(calc(-50% - ${sway / 2}px), -${H + 200}px)` }],
@@ -806,26 +813,26 @@ const ACTS = {
       make(); if (i % 3 === 0) { pose('bounce', 1000); }
       if (i === 6) {                                     // 몽이도 하나 터뜨리기
         const bs = [...fxEl.querySelectorAll('.bubble')]; const b = bs[0];
-        if (b) { const r = b.getBoundingClientRect(); moveTo(clampX(r.left + r.width / 2 - innerWidth / 2), clampY(r.top - innerHeight / 2), { ms: 600, hop: 60 }).then(() => { if (b.isConnected) { sfx('pop'); sparkle(r.left + r.width / 2, r.top, 6); b.remove(); } }); say('몽이도 펑!'); }
+        if (b) { const r = b.getBoundingClientRect(); moveTo(clampX(r.left + r.width / 2 - innerWidth / 2), clampY(r.top - innerHeight / 2), { ms: 600, hop: 60 }).then(() => { if (b.isConnected) { sfx('pop'); sparkle(r.left + r.width / 2, r.top, 6); b.remove(); } }); say('나도 펑!'); }
       }
       await wait(700);
     }
     await wait(4500);
-    await say(popped ? `${popped}개 터뜨렸다! {N} 최고!` : '비눗방울 하늘로 날아갔다~ 안녕~');
+    await say(popped ? `우와, ${popped}개나 터뜨렸어! 최고!` : '비눗방울 하늘로 날아갔네, 안녕!');
     clearProps(); await moveTo(0, 0);
   },
   async ball() {
-    await say('공 놀이 하자! {N}한테 데굴데굴~');
+    await say('공놀이 하자! {N}한테 간다, 데굴데굴!');
     for (let round = 0; round < 3 && !stopped(); round++) {
       const [mx, my] = mongCenter();
       const ball = prop('<div class="ball"></div>', mx, my + 70, 10, () => babyResponded('touch'));
       ball.classList.add('prop');
       await anim(ball, [{ transform: 'translate(-50%,-50%) scale(1) rotate(0)' }, { transform: `translate(calc(-50% + ${innerWidth / 2 - mx}px), calc(-50% + ${innerHeight * 0.78 - my - 70}px)) scale(2.2) rotate(540deg)` }], 1400, 'ease-out');
-      say(pick(['{N}야, 몽이한테 공 줘~', '공 톡 쳐 줄래?', '{N}가 던져 줘~']));
+      say(pick(['{N}야, 공 이리 줘!', '공 톡 쳐 볼래?', '나한테 던져 줘!']));
       const r = await waitResp(6000); if (stopped()) { ball.remove(); break; }
       await anim(ball, [{ transform: `translate(calc(-50% + ${innerWidth / 2 - mx}px), calc(-50% + ${innerHeight * 0.78 - my - 70}px)) scale(2.2) rotate(540deg)` }, { transform: 'translate(-50%,-50%) scale(1) rotate(0)' }], 1000, 'ease-in');
       ball.remove(); sfx('boing'); pose('bounce', 1100); sparkle(...mongCenter(), r ? 12 : 4);
-      await say(r ? pick(['{N}가 줬다! 고마워~', '우와, 잘 던진다!', '받았다! 또 해 볼까?']) : '몽이가 가져갈게~ 다시 간다!');
+      await say(r ? pick(['고마워! 잘 던진다!', '우와, 받았다! 또 하자!']) : '내가 가져갈게! 또 간다!');
     }
   },
   async animal() {
@@ -834,7 +841,7 @@ const ACTS = {
       const el = prop(em, 0, y, Math.min(140, W * 0.3)); el.classList.add('prop');
       const at = x => `translate(calc(-50% + ${x}px), -50%)`;
       el.style.transform = at(-90);
-      say(`우와! ${nm}가 왔어! ${snd}`);
+      say(`우와, ${nm} 왔다! ${snd}`);
       const steps = 6; let prev = -90;
       for (let i = 1; i <= steps && !stopped(); i++) {
         const x = -90 + (W + 180) * i / steps;
@@ -847,7 +854,7 @@ const ACTS = {
     }
   },
   async dance() {
-    await say('춤추자! 신나게~');
+    await say('우리 춤추자! 신난다!');
     pose('dance'); voiceOut++;
     const beat = 0.5, t0 = AC.currentTime + 0.1, notes = [523, 587, 659, 784, 880];
     for (let i = 0; i < 20; i++) {
@@ -863,20 +870,20 @@ const ACTS = {
       await wait(1000);
     }
     voiceOut = Math.max(0, voiceOut - 1); mongEl.classList.remove('dance'); muteUntil = performance.now() + 600;
-    await moveTo(0, 0); await say(pick(['신난다! {N}도 춤 잘 춘다~', '와아~ 재밌었다!']));
+    await moveTo(0, 0); await say(pick(['와, 신난다! {N}도 춤 잘 추네!', '와, 재밌었다!']));
   },
   async hide() {
     const [em, nm] = pick(TOYS), W = innerWidth, H = innerHeight, x = W * 0.5, y = H * 0.2;
     const toy = prop(em, x, y, Math.min(120, W * 0.28)); toy.classList.add('prop');
-    sfx('ding'); await say(`${nm} 봐! 안녕~`); if (stopped()) return clearProps();
+    sfx('ding'); await say(`${nm} 봐 봐! 안녕!`); if (stopped()) return clearProps();
     const cv = prop('<div class="cover"></div>', x, y - 200, 10); cv.classList.add('prop');
     await anim(cv, [{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(-50%,calc(-50% + 200px))' }], 700, 'ease-in');
-    await say(`${nm} 어디 갔지~?`);
+    await say(`어? ${nm} 어디 갔지?`);
     const r = await waitResp(3500);
     await anim(cv, [{ transform: 'translate(-50%,calc(-50% + 200px))' }, { transform: 'translate(-50%,calc(-50% - 260px))' }], 500, 'ease-out');
     toy.animate([{ transform: 'translate(-50%,-50%) scale(1)' }, { transform: 'translate(-50%,-60%) scale(1.3)' }, { transform: 'translate(-50%,-50%) scale(1)' }], { duration: 500 });
     sfx('boing'); sparkle(x, y, 14);
-    await say(r ? `맞아! ${nm} 여기 있다! {N} 똑똑하다~` : `여기 있다! 까꿍!`);
+    await say(r ? `맞아! 여기 있었네! {N} 똑똑하다!` : '여기 있다! 까꿍!');
     await wait(800); clearProps();
   },
   async stars() {
@@ -887,39 +894,39 @@ const ACTS = {
       const s = prop('⭐', x, -50, 56, (el) => { got++; sfx('ding'); const r = el.getBoundingClientRect(); sparkle(r.left + 28, r.top + 28, 8); el.remove(); babyResponded('touch'); });
       s.classList.add('prop');
       s.animate([{ transform: 'translate(-50%,-50%) rotate(0)' }, { transform: `translate(-50%, ${H + 100}px) rotate(360deg)` }], { duration: 4200 + Math.random() * 1500, easing: 'linear', fill: 'forwards' }).finished.then(() => s.remove()).catch(() => {});
-      if (i % 3 === 1) { moveTo(clampX(x - W / 2), -bounds().y, { ms: 600, hop: 90 }).then(() => { sfx('ding'); sparkle(...mongCenter(), 5, ['⭐']); }); say(pick(['냠! 몽이도 잡았다!', '잡았다!'])); }
+      if (i % 3 === 1) { moveTo(clampX(x - W / 2), -bounds().y, { ms: 600, hop: 90 }).then(() => { sfx('ding'); sparkle(...mongCenter(), 5, ['⭐']); }); say(pick(['냠! 나도 잡았다!', '잡았다!'])); }
       await wait(800);
     }
     await wait(3000); clearProps(); await moveTo(0, 0);
-    await say(got ? `별 ${got}개 잡았다! 반짝반짝~` : '별님 안녕~ 반짝반짝~');
+    await say(got ? `별 ${got}개 잡았어! 반짝반짝!` : '별님 안녕, 반짝반짝!');
   },
   async clap() {
-    pose('clap'); await say('짝짜꿍 하자! 짝짜꿍~ 짝짜꿍~');
+    pose('clap'); await say('짝짜꿍 하자! 짝짜꿍, 짝짜꿍!');
     for (let i = 0; i < 6; i++) { setTimeout(() => { clapSound(AC.currentTime); sparkle(...mongCenter(), 3, ['👏', '✨']); }, 100 + i * 450); }
     await wait(2900); mongEl.classList.remove('clap');
-    pose('shake'); await say('도리도리~ 도리도리~'); await wait(1200); mongEl.classList.remove('shake');
-    pose('hooray'); sparkle(...mongCenter(), 10, ['🙌', '⭐']); await say('만세~!'); await wait(900); mongEl.classList.remove('hooray');
-    pose('wave'); await say('빠이빠이~ 하고 손 흔들기!'); await wait(1200); mongEl.classList.remove('wave');
+    pose('shake'); await say('도리도리, 도리도리!'); await wait(1200); mongEl.classList.remove('shake');
+    pose('hooray'); sparkle(...mongCenter(), 10, ['🙌', '⭐']); await say('만세!'); await wait(900); mongEl.classList.remove('hooray');
+    pose('wave'); await say('빠이빠이 해 볼까? 손 흔들어!'); await wait(1200); mongEl.classList.remove('wave');
   },
   async song() {
     const k = pick(['star', 'play', 'peek']);
-    await say(`{N}야, 몽이가 노래 불러 줄게. ${T(SONGS[k].title)}!`);
+    await say(`노래 들려줄게! ${T(SONGS[k].title)}!`);
     pose('sway'); await sing(k); mongEl.classList.remove('sway');
     sparkle(...mongCenter(), 10, ['🎵', '🎶', '👏']);
-    await say(pick(['짝짝짝! 노래 끝~', '재밌었어? 또 부를까?']));
+    await say(pick(['짝짝짝! 재밌었어?', '또 들을까?']));
   },
   async lullaby() {
     document.body.classList.add('dim'); pose('sway');
-    await say('{N}야, 자장가 불러 줄게.', { pitch: 1.1, rate: 70 }); await sing('lullaby');
+    await say('{N}야, 자장가 들려줄게.', { pitch: 1.0, rate: 85 }); await sing('lullaby');
     mongEl.classList.remove('sway'); document.body.classList.toggle('dim', dimOn());
   },
   async chat() { pose('bounce', 1100); await say(pick(CHATS)); await waitResp(3000); },
   async clip() {
     const cl = await clipList();
-    if (cl.length) { const c = pick(cl); await say(`{N}야, 들어 봐~ ${c.name}!`); pose('sway'); await playClip(c.id); mongEl.classList.remove('sway'); }
+    if (cl.length) { const c = pick(cl); await say(`{N}야, 이거 들어 봐! ${c.name}!`); pose('sway'); await playClip(c.id); mongEl.classList.remove('sway'); }
     else return ACTS.chat();
   },
-  async bye() { pose('wave'); await moveTo(0, 0, { s: 1.1 }); await say('{N}야, 오늘 몽이랑 재밌었어! 이제 엄마 아빠랑 놀자~ 빠이빠이~'); mongEl.classList.remove('wave'); await moveTo(0, 0, { s: 1 }); },
+  async bye() { pose('wave'); await moveTo(0, 0, { s: 1.1 }); await say('{N}야, 오늘 너무 재밌었어! 이제 엄마 아빠랑 놀자. 빠이빠이!'); mongEl.classList.remove('wave'); await moveTo(0, 0, { s: 1 }); },
 };
 async function act(what) {
   if (ended || cryMode || !ACTS[what]) return;
@@ -944,7 +951,7 @@ async function program() {
 let ticking = false, ending = false;
 let ended = true, sessMin = 10, sessStart = 0, wakeLock = null;
 const nightMode = () => { const h = new Date().getHours(); return h >= 20 || h < 6; };
-const dimOn = () => S.dim || nightMode();
+const dimOn = () => S.dim;
 document.querySelectorAll('#lenRow .chip').forEach(b => b.onclick = () => {
   document.querySelectorAll('#lenRow .chip').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); sessMin = +b.dataset.min; });
 document.getElementById('pName').value = PROF.name || '';
@@ -974,7 +981,7 @@ async function startSession() {
   try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
   if (!ticking) { ticking = true; setInterval(listenTick, 25); }
   program();
-  await act(nightMode() ? 'lullaby' : 'greet');
+  await act('greet');
 }
 setInterval(() => {
   if (ended || ending) return;
@@ -1067,7 +1074,7 @@ document.getElementById('mong').addEventListener('pointerdown', async (ev) => { 
   sparkle(ev.clientX, ev.clientY, 10, ['💖', '✨', '😆']); sfx('boing'); pose('bounce', 1100);
   if (Date.now() - lastTouchLog > 1500) { lastTouchLog = Date.now(); logEvent({ kind: 'touch', act: curAct }); }
   const waited = !!respWaiter; babyResponded('touch');
-  if (!waited && !voiceOut) say(pick(['히히, 간지러워~!', '우와, {N}가 몽이 만졌다!', '톡톡! 안녕~', '꺄르르~']));
+  if (!waited && !voiceOut) say(pick(['히히, 간지러워!', '어? {N}가 나 만졌다!', '톡톡! 안녕!', '꺄르르!']));
 });
 // 설정
 const bind = (id, key, ev = 'input', conv = v => +v) => { const el = document.getElementById(id);
@@ -1075,7 +1082,7 @@ const bind = (id, key, ev = 'input', conv = v => +v) => { const el = document.ge
   el.addEventListener(ev, () => { S[key] = el.type === 'checkbox' ? el.checked : conv(el.value); saveSettings();
     if (key === 'dim') document.body.classList.toggle('dim', dimOn()); }); };
 bind('sens', 'sens'); bind('rate', 'rate'); bind('idleSel', 'gap', 'change'); bind('dimChk', 'dim', 'change'); bind('thinkChk', 'think', 'change');
-document.getElementById('voiceSel').addEventListener('change', e => { S.voice = e.target.value; saveSettings(); });
+document.getElementById('voiceSel').addEventListener('change', e => { S.voice = e.target.value; S.voiceManual = true; saveSettings(); say('안녕! 나 몽이야. 이 목소리 어때?'); });
 let micTesting = false;
 document.getElementById('testMic').onclick = async () => {
   try { if (!AC) initAudio(); await AC.resume(); if (!analyser) await initMic(); } catch (e) { document.getElementById('micLvl').textContent = '마이크 허용 필요'; return; }
