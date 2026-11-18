@@ -1,0 +1,1040 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#fbf6ee">
+<meta name="robots" content="noindex">
+<title>몽이 — {N} 친구</title>
+<style>
+:root{
+  --bg:#fbf6ee; --ink:#3b3330; --soft:#8a7d74; --card:#ffffff; --line:#eadfd2;
+  --body:#cfe6f7; --body2:#b7d8f0; --cheek:#f6b9c0; --accent:#e88a5a; --warn:#d9534f;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;overflow:hidden;user-select:none}
+body.dim{--bg:#1d1a19;--ink:#e9e1da;--soft:#9c918a;--card:#2a2625;--line:#3a3433;--body:#55708a;--body2:#4a6278;--cheek:#8a5a60}
+#stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .8s}
+#mong{width:min(78vw,62vh);height:min(78vw,62vh);touch-action:manipulation;cursor:pointer}
+#mong .bodyg{transform-origin:200px 380px;animation:breathe 3.2s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.02,.985)}}
+#mong.bounce .bodyg{animation:bounce .5s ease-in-out 2}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-22px)}}
+#mong.shake .bodyg{animation:shake .7s ease-in-out 3}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+#mong .eye{transform-box:fill-box;transform-origin:center;animation:blink 4.5s infinite}
+@keyframes blink{0%,94%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+#mong .hands{transition:transform .35s ease}
+#mong.hide .hl{transform:translate(58px,-96px)}
+#mong.hide .hr{transform:translate(-58px,-96px)}
+#mong .hl,#mong .hr{transition:transform .35s ease}
+#mong.clap .hl{animation:clapL .45s ease-in-out infinite}
+#mong.clap .hr{animation:clapR .45s ease-in-out infinite}
+@keyframes clapL{50%{transform:translate(80px,-60px)}}
+@keyframes clapR{50%{transform:translate(-80px,-60px)}}
+#mong.wave .hr{animation:wave .5s ease-in-out infinite;transform-origin:300px 300px}
+@keyframes wave{0%,100%{transform:translate(0,-60px) rotate(-12deg)}50%{transform:translate(0,-60px) rotate(14deg)}}
+#pic{position:absolute;top:6vh;font-size:min(22vw,18vh);line-height:1;opacity:0;transition:opacity .4s}
+#pic.on{opacity:1}
+#lyric{min-height:2.4em;margin-top:1vh;font-size:clamp(18px,3.4vw,30px);color:var(--soft);text-align:center;padding:0 16px}
+#lyric b{color:var(--accent)}
+#think{position:fixed;left:0;right:0;bottom:12px;text-align:center;font-size:14px;color:var(--soft);padding:0 16px}
+#think .tag{display:inline-block;padding:3px 10px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin:2px}
+#alert{position:fixed;top:0;left:0;right:0;padding:18px;text-align:center;font-size:22px;font-weight:700;background:var(--warn);color:#fff;transform:translateY(-110%);transition:transform .3s;z-index:5}
+#alert.on{transform:none}
+#parentBtn{position:fixed;top:10px;right:10px;width:54px;height:54px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--soft);font-size:12px;z-index:4}
+#timer{position:fixed;top:18px;left:16px;font-size:13px;color:var(--soft)}
+/* start screen */
+#start{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;padding:20px;text-align:center}
+#start h1{margin:0 0 6px;font-size:34px}
+#start p{color:var(--soft);max-width:560px;line-height:1.6;margin:6px 0}
+.big{font-size:22px;padding:16px 34px;border-radius:40px;border:0;background:var(--accent);color:#fff;margin-top:18px;cursor:pointer}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.chip{padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:15px;cursor:pointer}
+.chip.sel{border-color:var(--accent);color:var(--accent);font-weight:700}
+/* parent panel */
+#panel{position:fixed;top:0;right:0;bottom:0;width:min(440px,100vw);background:var(--card);border-left:1px solid var(--line);z-index:8;
+  transform:translateX(105%);transition:transform .3s;overflow-y:auto;padding:16px 16px 40px;user-select:text}
+#panel.on{transform:none}
+#panel h2{font-size:17px;margin:18px 0 8px;border-bottom:1px solid var(--line);padding-bottom:6px}
+#panel h2:first-of-type{margin-top:4px}
+#panel .small{font-size:13px;color:var(--soft);line-height:1.55}
+#panel table{width:100%;border-collapse:collapse;font-size:14px}
+#panel td{padding:4px 2px;border-bottom:1px dashed var(--line)}
+#panel td:last-child{text-align:right;font-weight:700}
+#panel button{font-family:inherit}
+#log div{font-size:13px;padding:5px 0;border-bottom:1px dashed var(--line)}
+#log .t{color:var(--soft);margin-right:6px}
+label.set{display:flex;justify-content:space-between;align-items:center;font-size:14px;margin:8px 0;gap:10px}
+select,input[type=range]{max-width:58%}
+#clips div{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:4px 0}
+#report{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:11;display:none;align-items:center;justify-content:center;padding:12px}
+#report.on{display:flex}
+#report .box{background:var(--card);border-radius:16px;max-width:520px;width:100%;max-height:92vh;overflow:auto;padding:12px}
+#report canvas{width:100%;height:auto;border-radius:10px;display:block}
+#weekBanner{display:none;margin-top:14px;padding:12px 16px;border-radius:14px;background:var(--card);border:1px solid var(--accent);color:var(--ink);font-size:16px;cursor:pointer}
+.prof{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.prof input{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font-size:16px;font-family:inherit}
+#ended{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9;text-align:center;padding:20px}
+#ended.on{display:flex}
+</style>
+</head>
+<body>
+
+<div id="start">
+  <h1>몽이 — {N} 친구</h1>
+  <p id="ageLine"></p>
+  <p>엄마·아빠가 옆에 있을 때 켜 주세요. 몽이는 {N} 소리를 듣고 대답하고, 말을 걸고, 노래를 불러요.<br>
+     마이크 소리는 이 기기 밖으로 나가지 않아요. 녹음은 저장하지 않아요(목소리 상자만 예외).</p>
+  <div class="prof">
+    <input id="pName" placeholder="아이 이름 (예: 하늘)" maxlength="6" style="width:150px">
+    <input id="pBirth" type="date" title="생일">
+  </div>
+  <div class="small" style="color:var(--soft);font-size:13px;margin-top:4px">이름·생일은 이 기기에만 저장돼요.</div>
+  <div class="row" id="lenRow">
+    <span class="small" style="align-self:center">놀이 시간</span>
+    <button class="chip" data-min="5">5분</button>
+    <button class="chip sel" data-min="10">10분</button>
+    <button class="chip" data-min="15">15분</button>
+  </div>
+  <button class="big" id="go">몽이 깨우기</button>
+  <p class="small" id="startNote" style="margin-top:14px"></p>
+  <div id="weekBanner">📒 이번 주 {N} 보고서가 나왔어요 — 눌러서 보기</div>
+</div>
+
+<div id="report"><div class="box">
+  <canvas id="repCanvas" width="1080" height="1600"></canvas>
+  <div class="row">
+    <button class="chip" id="repPrev">◀ 지난주</button>
+    <button class="chip" id="repShare" style="border-color:var(--accent);color:var(--accent);font-weight:700">카톡으로 보내기</button>
+    <button class="chip" id="repNext">다음 주 ▶</button>
+    <button class="chip" id="repClose">닫기</button>
+  </div>
+  <div class="small" id="repNote" style="text-align:center;margin-top:6px;color:var(--soft)"></div>
+</div></div>
+
+<div id="stage">
+  <div id="pic"></div>
+  <svg id="mong" viewBox="0 0 400 420" aria-label="몽이">
+    <g class="bodyg">
+      <ellipse cx="200" cy="395" rx="120" ry="14" fill="#000" opacity=".06"/>
+      <ellipse cx="135" cy="80" rx="34" ry="62" fill="var(--body2)" transform="rotate(-14 135 80)"/>
+      <ellipse cx="265" cy="80" rx="34" ry="62" fill="var(--body2)" transform="rotate(14 265 80)"/>
+      <ellipse cx="135" cy="84" rx="16" ry="42" fill="var(--cheek)" opacity=".55" transform="rotate(-14 135 84)"/>
+      <ellipse cx="265" cy="84" rx="16" ry="42" fill="var(--cheek)" opacity=".55" transform="rotate(14 265 84)"/>
+      <path d="M60 250 C60 140 120 110 200 110 C280 110 340 140 340 250 C340 340 290 385 200 385 C110 385 60 340 60 250Z" fill="var(--body)"/>
+      <g class="face">
+        <ellipse class="eye" cx="152" cy="225" rx="15" ry="19" fill="#2e2a28"/>
+        <ellipse class="eye" cx="248" cy="225" rx="15" ry="19" fill="#2e2a28"/>
+        <circle cx="157" cy="218" r="5" fill="#fff"/><circle cx="253" cy="218" r="5" fill="#fff"/>
+        <ellipse cx="118" cy="268" rx="22" ry="13" fill="var(--cheek)" opacity=".8"/>
+        <ellipse cx="282" cy="268" rx="22" ry="13" fill="var(--cheek)" opacity=".8"/>
+        <ellipse id="mouth" cx="200" cy="272" rx="16" ry="5" fill="#7a3b3b"/>
+      </g>
+      <g class="hands">
+        <ellipse class="hl" cx="95" cy="318" rx="30" ry="26" fill="#9fcaeb" stroke="#fff" stroke-width="4"/>
+        <ellipse class="hr" cx="305" cy="318" rx="30" ry="26" fill="#9fcaeb" stroke="#fff" stroke-width="4"/>
+      </g>
+    </g>
+  </svg>
+  <div id="lyric"></div>
+</div>
+
+<div id="timer"></div>
+<div id="think"></div>
+<div id="alert">{N}가 울어요 — 안아 주세요</div>
+<button id="parentBtn" title="길게 누르면 열려요">부모<br>●</button>
+
+<div id="ended">
+  <h1 style="font-size:30px;margin:0">오늘 몽이랑 끝!</h1>
+  <p class="small" id="endSum" style="font-size:16px;color:var(--soft);line-height:1.7"></p>
+  <p style="color:var(--soft)">이제 화면 끄고 엄마·아빠 얼굴 보면서 놀 시간이에요.</p>
+  <button class="big" id="again">다시 시작 (부모)</button>
+</div>
+
+<div id="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <b>부모 화면</b><button class="chip" id="closePanel">닫기</button>
+  </div>
+
+  <h2>지금 상황 (해석 정확도 ↑)</h2>
+  <div class="row" style="justify-content:flex-start">
+    <button class="chip" data-ctx="fed">🍼 방금 먹었어요</button>
+    <button class="chip" data-ctx="woke">☀️ 방금 깼어요</button>
+    <button class="chip" data-ctx="diaper">🧷 기저귀 갈았어요</button>
+  </div>
+  <div class="small" id="ctxLine" style="margin-top:6px"></div>
+
+  <h2>{N}가 방금 낸 소리</h2>
+  <div class="small">들은 소리를 누르면 몽이가 그 소리로 따라 하고 단어로 이어 줘요.</div>
+  <div class="row" id="sylRow" style="justify-content:flex-start"></div>
+
+  <h2>몽이에게 시키기</h2>
+  <div class="row" style="justify-content:flex-start" id="cmdRow">
+    <button class="chip" data-cmd="song">🎵 노래</button>
+    <button class="chip" data-cmd="lullaby">🌙 자장가</button>
+    <button class="chip" data-cmd="peek">🙈 까꿍</button>
+    <button class="chip" data-cmd="animal">🐶 동물 소리</button>
+    <button class="chip" data-cmd="clap">👏 짝짜꿍</button>
+    <button class="chip" data-cmd="name">📣 이름 부르기</button>
+    <button class="chip" data-cmd="clip">🎙 엄마·아빠 목소리</button>
+    <button class="chip" data-cmd="bye">👋 끝내기</button>
+  </div>
+
+  <h2>오늘 {N} 소리 기록</h2>
+  <table id="sumTbl"></table>
+  <div class="small" style="margin-top:6px">대화 턴 = 몽이나 어른이 말한 뒤 5초 안에 {N}가 소리로 대답한 횟수. 어휘 발달과 가장 관련이 큰 지표예요. 몽이와의 턴보다 엄마·아빠와의 턴이 훨씬 효과적이에요.</div>
+  <div id="log" style="margin-top:8px"></div>
+  <div class="row" style="justify-content:flex-start">
+    <button class="chip" id="exportBtn">기록 파일로 저장 (JSON)</button>
+  </div>
+
+  <h2>주간 보고서</h2>
+  <div class="small">매주 일요일 저녁에 지난 7일 보고서가 만들어져요. 「카톡으로 보내기」를 누르면 이미지로 공유돼요.</div>
+  <div class="row" style="justify-content:flex-start"><button class="chip" id="openReport">📒 이번 주 보고서 보기</button></div>
+
+  <h2>클라우드 백업 (선택)</h2>
+  <div class="small">켜 두면 소리 기록(시각·종류·횟수만, 녹음 없음)이 전용 DB로 올라가서 PC에서 자세한 보고서를 만들 수 있어요. 비워 두면 이 기기에만 남아요.</div>
+  <label class="set">주소 <input id="syncUrl" placeholder="https://….supabase.co" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"></label>
+  <label class="set">키 <input id="syncKey" placeholder="sb_publishable_…" style="flex:1;padding:6px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)"></label>
+  <div class="small" id="syncStat"></div>
+
+  <h2>엄마·아빠 목소리 상자</h2>
+  <div class="small">노래·인사·"{N}야 사랑해"를 녹음해 두면 몽이가 놀이 중에 틀어 줘요. 이 기기에만 저장돼요.</div>
+  <div class="row" style="justify-content:flex-start">
+    <input id="clipName" placeholder="이름 (예: 아빠 자장가)" style="flex:1;min-width:150px;padding:8px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)">
+    <button class="chip" id="recBtn">● 녹음</button>
+  </div>
+  <div id="clips"></div>
+
+  <h2>설정</h2>
+  <label class="set">마이크 민감도 <input type="range" id="sens" min="1" max="10" value="5"></label>
+  <label class="set">몽이 목소리 <select id="voiceSel"></select></label>
+  <label class="set">말 빠르기 <input type="range" id="rate" min="60" max="110" value="85"></label>
+  <label class="set">몽이가 먼저 말 거는 간격 <select id="idleSel">
+    <option value="15">15초</option><option value="25" selected>25초</option><option value="40">40초</option></select></label>
+  <label class="set">화면 어둡게 (밤) <input type="checkbox" id="dimChk"></label>
+  <label class="set">소리 해석 자막 보이기 <input type="checkbox" id="thinkChk" checked></label>
+  <div class="row" style="justify-content:flex-start"><button class="chip" id="testMic">마이크 테스트</button><span class="small" id="micLvl"></span></div>
+
+  <h2>꼭 알아 두기</h2>
+  <div class="small">
+  · <b>옹알이 해석은 추측이에요.</b> 11개월 옹알이는 아직 정해진 뜻이 없어서, 몽이는 소리 모양(길이·높이·억양·음절 수)과 상황(먹은 시간·깬 시간)으로 가능성을 말해 줄 뿐이에요. {N} 표정·손짓을 같이 보세요.<br>
+  · 몽이가 하는 일의 핵심은 <b>주고받기(serve &amp; return)</b> — {N}가 소리 내면 바로 대답하고 3초 기다려 주는 것. 엄마·아빠가 똑같이 해 주면 효과가 몇 배예요.<br>
+  · 대한소아청소년과학회·WHO·미국소아과학회는 <b>18~24개월 전 화면 노출을 최소화</b>하라고 권해요(가족 영상통화는 예외). 그래서 몽이는 한 번에 5~15분만 놀고 스스로 끝나며, 화면보다 소리 위주로 놀아요. 화면 어둡게를 켜도 돼요.<br>
+  · <b>울음이 감지되면 몽이는 달래기를 멈추고 어른을 불러요.</b> 몽이를 우는 아이 달래는 기계로 쓰지 마세요.<br>
+  · 몽이는 보모가 아니에요. 어른이 같은 방에 있을 때만 켜 주세요.
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============ 기본 정보 ============ */
+/* 아이 이름·생일은 이 기기에만 저장 (코드에 없음) */
+const PROF_KEY = 'iaFriend.profile';
+const PROF = (() => { try { return JSON.parse(localStorage.getItem(PROF_KEY)) || {}; } catch (e) { return {}; } })();
+const NAME = (PROF.name || '아가').trim(), FRIEND = '몽이';
+const BIRTH = PROF.birth ? new Date(PROF.birth + 'T00:00:00') : null;
+function hasBatchim(w) { const c = w.charCodeAt(w.length - 1) - 0xAC00; return c >= 0 && c <= 11171 && c % 28 !== 0; }
+const NAME2 = hasBatchim(NAME) ? NAME + '이' : NAME;          // 민준 → 민준이
+const VOC = hasBatchim(NAME) ? NAME + '아' : NAME + '야';      // 이름 부르기
+const T = s => String(s).replace(/\{N\}야/g, VOC).replace(/\{N\}/g, NAME2);
+function ageInfo(d = new Date()) {
+  if (!BIRTH) return null;
+  const days = Math.floor((d - BIRTH) / 864e5);
+  let m = (d.getFullYear() - BIRTH.getFullYear()) * 12 + d.getMonth() - BIRTH.getMonth();
+  if (d.getDate() < BIRTH.getDate()) m--;
+  const ref = new Date(BIRTH); ref.setMonth(ref.getMonth() + m);
+  return { days, months: m, rem: Math.floor((d - ref) / 864e5) };
+}
+const AGE = ageInfo();
+const ageText = () => AGE ? `생후 ${AGE.days}일 · 만 ${AGE.months}개월 ${AGE.rem}일` : '생일을 넣으면 개월수가 나와요';
+document.getElementById('ageLine').textContent = `{N} · ${ageText()}`;
+(function fillNames() {                                       // 화면 글자의 {N} 채우기
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  let n; while ((n = w.nextNode())) if (n.nodeValue.includes('{N}')) n.nodeValue = T(n.nodeValue);
+  document.title = T(document.title);
+})();
+
+/* ============ 저장 ============ */
+const LS = 'iaFriend.v1';
+function load() { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch (e) { return {}; } }
+function save() { try { localStorage.setItem(LS, JSON.stringify(DB)); } catch (e) {} }
+const DB = Object.assign({ days: {}, ctx: {}, settings: {} }, load());
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+function day() {
+  const k = todayKey();
+  DB.days[k] = DB.days[k] || { events: [], turns: 0, bestChain: 0, sessions: 0, minutes: 0 };
+  return DB.days[k];
+}
+const S = Object.assign({ sens: 5, rate: 85, idle: 25, dim: false, think: true, voice: '' }, DB.settings);
+function saveSettings() { DB.settings = S; save(); }
+
+/* ============ 오디오 ============ */
+let AC, master, micStream, analyser, recorder;
+function initAudio() {
+  AC = new (window.AudioContext || window.webkitAudioContext)();
+  const comp = AC.createDynamicsCompressor();
+  master = AC.createGain(); master.gain.value = 0.8;
+  master.connect(comp); comp.connect(AC.destination);
+}
+async function initMic() {
+  micStream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false }
+  });
+  const src = AC.createMediaStreamSource(micStream);
+  analyser = AC.createAnalyser(); analyser.fftSize = 2048;
+  src.connect(analyser);
+}
+
+/* ============ 몽이 목소리 (TTS, 이 기기 안에서만) ============ */
+let VOICES = [];
+function pickVoices() {
+  VOICES = speechSynthesis.getVoices().filter(v => /ko/i.test(v.lang));
+  const sel = document.getElementById('voiceSel'); sel.innerHTML = '';
+  VOICES.forEach(v => {
+    const o = document.createElement('option'); o.value = v.name;
+    o.textContent = v.name.replace('Microsoft ', '') + (v.localService ? '' : ' (인터넷)');
+    sel.appendChild(o);
+  });
+  const local = VOICES.find(v => v.localService);
+  if (!S.voice || !VOICES.find(v => v.name === S.voice)) S.voice = (local || VOICES[0] || {}).name || '';
+  sel.value = S.voice;
+  document.getElementById('startNote').textContent = VOICES.length ? '' :
+    '한국어 음성이 없어요. Windows 설정 → 시간 및 언어 → 음성에서 한국어 음성을 추가해 주세요.';
+}
+speechSynthesis.onvoiceschanged = pickVoices; pickVoices();
+
+let busy = 0, muteUntil = 0;
+const mouth = document.getElementById('mouth');
+function say(text, { pitch = 1.45, rate } = {}) {
+  return new Promise(res => {
+    if (ended) return res();
+    busy++;
+    const u = new SpeechSynthesisUtterance(T(text));
+    const v = VOICES.find(v => v.name === S.voice); if (v) u.voice = v;
+    u.lang = 'ko-KR'; u.pitch = pitch; u.rate = (rate || S.rate) / 100;
+    u.volume = nightMode() ? 0.7 : 1;
+    let talk = setInterval(() => { mouth.setAttribute('ry', 5 + Math.random() * 16); mouth.setAttribute('rx', 14 + Math.random() * 6); }, 110);
+    const done = () => { clearInterval(talk); mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16); busy=Math.max(0,busy-1); muteUntil = performance.now() + 600; markServe(); res(); };
+    u.onend = done; u.onerror = done;
+    speechSynthesis.speak(u);
+  });
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+/* ============ 노래 (멜로디 + 모음 노래 목소리) ============ */
+const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function freq(n) { const m = n.match(/([A-G])(#?)(\d)/); const s = NOTE[m[1]] + (m[2] ? 1 : 0) + (+m[3] - 4) * 12; return 261.63 * Math.pow(2, s / 12); }
+// 한글 음절 → 모음 포먼트(아이 목소리 근사)
+const VF = { a: [1000, 1450], e: [620, 2200], i: [420, 2700], o: [620, 1000], u: [430, 950], eo: [760, 1250], eu: [480, 1500] };
+const VMAP = ['a','e','a','e','eo','e','eo','e','o','a','e','e','o','u','eo','e','i','u','eu','i','i'];
+function vowelOf(syl) { const c = syl.charCodeAt(0) - 0xAC00; if (c < 0 || c > 11171) return 'a'; return VMAP[Math.floor(c / 28) % 21]; }
+const MOUTH = { a: [18, 18], e: [20, 10], i: [22, 6], o: [12, 14], u: [9, 9], eo: [16, 14], eu: [20, 6] };
+
+let songBus = null;
+function singNote(t, f, dur, v) {
+  const out = songBus || master;
+  const g = AC.createGain(); g.gain.value = 0; g.connect(out);
+  const [f1, f2] = VF[v] || VF.a;
+  const bp1 = AC.createBiquadFilter(); bp1.type = 'bandpass'; bp1.frequency.value = f1; bp1.Q.value = 6;
+  const bp2 = AC.createBiquadFilter(); bp2.type = 'bandpass'; bp2.frequency.value = f2; bp2.Q.value = 8;
+  const g1 = AC.createGain(); g1.gain.value = 1.0; const g2 = AC.createGain(); g2.gain.value = 0.55;
+  const osc = AC.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = f;
+  const lfo = AC.createOscillator(); lfo.frequency.value = 5.5; const lg = AC.createGain(); lg.gain.value = 0;
+  lfo.connect(lg); lg.connect(osc.frequency);
+  lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(f * 0.012, t + Math.min(0.35, dur * 0.6));
+  osc.connect(bp1); osc.connect(bp2); bp1.connect(g1); bp2.connect(g2); g1.connect(g); g2.connect(g);
+  const pk = nightMode() ? 0.55 : 0.8, end = t + dur;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(pk * 0.35, t + 0.025);   // 자음 느낌 살짝
+  g.gain.linearRampToValueAtTime(pk, t + 0.07); g.gain.setValueAtTime(pk, end - 0.07);
+  g.gain.linearRampToValueAtTime(0, end - 0.01);
+  osc.start(t); lfo.start(t); osc.stop(end); lfo.stop(end);
+  // 오르골
+  const b = AC.createOscillator(); b.type = 'triangle'; b.frequency.value = f * 2;
+  const bg = AC.createGain(); bg.connect(out);
+  bg.gain.setValueAtTime(0.0001, t); bg.gain.exponentialRampToValueAtTime(nightMode() ? 0.08 : 0.14, t + 0.01);
+  bg.gain.exponentialRampToValueAtTime(0.0001, t + Math.min(1.2, dur + 0.4));
+  b.connect(bg); b.start(t); b.stop(t + 1.3);
+}
+function clapSound(t) {
+  const len = 0.08, buf = AC.createBuffer(1, AC.sampleRate * len, AC.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 3);
+  const s = AC.createBufferSource(); s.buffer = buf; const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 1500;
+  const g = AC.createGain(); g.gain.value = 0.6; s.connect(f); f.connect(g); g.connect(songBus || master); s.start(t);
+}
+
+// 곡: 멜로디는 저작권 만료 동요·민요 선율 또는 직접 지은 선율, 가사는 몽이용 창작/전래 가사
+const SONGS = {
+  star: { title: '반짝반짝 {N}별', bpm: 92, tr: -3, lines: [
+    ['반짝반짝{N}별', 'C4 C4 G4 G4 A4 A4 G4', '1 1 1 1 1 1 2'],
+    ['우리집에떴어요', 'F4 F4 E4 E4 D4 D4 C4', '1 1 1 1 1 1 2'],
+    ['웃을때도반짝여', 'G4 G4 F4 F4 E4 E4 D4', '1 1 1 1 1 1 2'],
+    ['잠잘때도반짝여', 'G4 G4 F4 F4 E4 E4 D4', '1 1 1 1 1 1 2'],
+    ['반짝반짝{N}별', 'C4 C4 G4 G4 A4 A4 G4', '1 1 1 1 1 1 2'],
+    ['사랑해요우리별', 'F4 F4 E4 E4 D4 D4 C4', '1 1 1 1 1 1 2'] ] },
+  play: { title: '{N}야 놀자', bpm: 104, tr: 0, clap: true, lines: [
+    ['{N}야{N}야', 'G4 E4 E4 F4 D4 D4', '1 1 2 1 1 2'],
+    ['이리와서놀아요', 'C4 D4 E4 F4 G4 G4 G4', '1 1 1 1 1 1 2'],
+    ['몽이랑{N}랑', 'G4 E4 E4 F4 D4 D4', '1 1 2 1 1 2'],
+    ['짝짜꿍해요', 'C4 E4 G4 G4 C4', '1 1 1 1 4'],
+    ['손뼉치며짝짜꿍', 'D4 D4 D4 D4 D4 E4 F4', '1 1 1 1 1 1 2'],
+    ['도리도리잘하네', 'E4 E4 E4 E4 E4 F4 G4', '1 1 1 1 1 1 2'],
+    ['우리{N}최고', 'G4 E4 E4 F4 D4 D4', '1 1 2 1 1 2'],
+    ['사랑해{N}', 'C4 E4 G4 G4 C4', '1 1 1 1 4'] ] },
+  peek: { title: '까꿍 노래', bpm: 100, tr: 0, peek: true, lines: [
+    ['우리{N}', 'C4 D4 E4 C4', '1 1 1 1'], ['우리{N}', 'C4 D4 E4 C4', '1 1 1 1'],
+    ['여기요', 'E4 F4 G4', '1 1 2'], ['여기요', 'E4 F4 G4', '1 1 2'],
+    ['까꿍까꿍까꿍', 'G4 A4 G4 F4 E4 C4', '.5 .5 .5 .5 1 1'],
+    ['까꿍까꿍까꿍', 'G4 A4 G4 F4 E4 C4', '.5 .5 .5 .5 1 1'],
+    ['반가워', 'C4 G3 C4', '1 1 2'], ['반가워', 'C4 G3 C4', '1 1 2'] ] },
+  lullaby: { title: '자장자장 (전래)', bpm: 62, tr: -2, night: true, lines: [
+    ['자장자장우리{N}', 'E4 E4 D4 C4 D4 E4 G4 E4', '1 1 1 1 1 1 1 3'],
+    ['잘도잔다우리{N}', 'G4 G4 A4 G4 E4 D4 C4 D4', '1 1 1 1 1 1 1 3'],
+    ['꼬꼬닭아울지마라', 'E4 E4 D4 C4 D4 E4 G4 A4', '1 1 1 1 1 1 1 3'],
+    ['우리{N}잠을깰라', 'G4 E4 D4 E4 D4 C4 C4 C4', '1 1 1 1 1 1 1 3'],
+    ['멍멍개야짖지마라', 'E4 E4 D4 C4 D4 E4 G4 A4', '1 1 1 1 1 1 1 3'],
+    ['우리{N}잠을깰라', 'G4 E4 D4 E4 D4 C4 C4 C4', '1 1 1 1 1 1 1 4'] ] },
+};
+const lyricEl = document.getElementById('lyric');
+let songStop = false;
+async function sing(key) {
+  const s = SONGS[key]; if (!s || ended) return;
+  busy++; songStop = false;
+  songBus = AC.createGain(); songBus.connect(master); const myBus = songBus;
+  const beat = 60 / s.bpm, mong = document.getElementById('mong');
+  let t = AC.currentTime + 0.25; const t0 = t, timers = [];
+  s.lines.forEach((ln, li) => {
+    const nm = [...NAME2].length === 2 ? NAME2 : '아가', syl = [...ln[0].replace(/\{N\}/g, nm)], notes = ln[1].split(' '), durs = ln[2].split(' ').map(Number);
+    notes.forEach((n, i) => {
+      const f = freq(n) * 2 * Math.pow(2, s.tr / 12), dur = durs[i] * beat, v = vowelOf(syl[i] || '아');
+      singNote(t, f, dur * 0.96, v);
+      if (s.clap && li >= 4 && li <= 5) clapSound(t);
+      const at = (t - AC.currentTime) * 1000;
+      timers.push(setTimeout(() => {
+        const [rx, ry] = MOUTH[v]; mouth.setAttribute('rx', rx); mouth.setAttribute('ry', ry);
+        lyricEl.innerHTML = syl.map((c, k) => k === i ? `<b>${c}</b>` : c).join('');
+        if (s.peek && li >= 4 && li <= 5) mong.classList.toggle('hide', i % 2 === 0);
+        if (s.clap && li >= 4 && li <= 5) mong.classList.add('clap');
+        if (s.clap && li === 5 && i === 0) { mong.classList.remove('clap'); mong.classList.add('shake'); }
+      }, at));
+      timers.push(setTimeout(() => mouth.setAttribute('ry', 5), at + dur * 900));
+      t += dur;
+    });
+    t += beat * 0.25;
+  });
+  const total = (t - AC.currentTime) * 1000;
+  await new Promise(r => { const iv = setInterval(() => { if (songStop || ended) { clearInterval(iv); r(); } }, 200); setTimeout(() => { clearInterval(iv); r(); }, total); });
+  timers.forEach(clearTimeout);
+  myBus.gain.setTargetAtTime(0, AC.currentTime, 0.05); setTimeout(() => myBus.disconnect(), 400); if (songBus === myBus) songBus = null;
+  mong.classList.remove('hide', 'clap', 'shake'); mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16);
+  lyricEl.textContent = ''; busy=Math.max(0,busy-1); muteUntil = performance.now() + 800; markServe();
+  logEvent({ kind: 'song', title: s.title });
+}
+
+/* ============ 소리 듣기 (이 기기 안에서만 분석) ============ */
+let floor = 0.004, seg = null, utt = null, lastVoiceAt = 0, lastServeAt = 0, chain = 0;
+function markServe() { lastServeAt = performance.now(); }
+function rmsOf(b) { let s = 0; for (let i = 0; i < b.length; i++) s += b[i] * b[i]; return Math.sqrt(s / b.length); }
+function pitchOf(b, sr) {            // 자기상관 — 150~1400Hz
+  const minL = Math.floor(sr / 1400), maxL = Math.floor(sr / 150), n = b.length;
+  let best = -1, bestL = -1, r0 = 0;
+  for (let i = 0; i < n; i++) r0 += b[i] * b[i];
+  if (r0 === 0) return 0;
+  for (let L = minL; L <= maxL; L++) {
+    let r = 0; for (let i = 0; i < n - L; i++) r += b[i] * b[i + L];
+    r /= r0; if (r > best) { best = r; bestL = L; }
+  }
+  return best > 0.45 ? sr / bestL : 0;
+}
+const buf = new Float32Array(2048);
+function listenTick() {
+  if (!analyser || (ended && !micTesting)) return;
+  analyser.getFloatTimeDomainData(buf);
+  const r = rmsOf(buf), now = performance.now();
+  const gated = busy > 0 || now < muteUntil || speechSynthesis.speaking;
+  const k = 1.6 + (10 - S.sens) * 0.45;                    // 민감도
+  const thr = Math.max(floor * k * 1.8, 0.006 + (10 - S.sens) * 0.002);
+  if (!gated && r < thr) floor = floor * 0.995 + Math.min(r, floor * 2) * 0.005;
+  if (micTesting) document.getElementById('micLvl').textContent = `소리 ${(r * 1000).toFixed(0)} / 기준 ${(thr * 1000).toFixed(0)}`;
+  if (gated) { seg = null; utt = null; return; }
+  const loud = r > thr;
+  if (loud) {
+    const p = pitchOf(buf, AC.sampleRate);
+    if (!utt) utt = { start: now, segs: [], frames: [] };
+    if (!seg) seg = { start: now, end: now };
+    seg.end = now; utt.frames.push({ t: now, r, p }); lastVoiceAt = now;
+  } else {
+    if (utt) utt.frames.push({ t: now, r, p: 0 });
+    if (seg && now - seg.end > 220) { utt.segs.push(seg); seg = null; }
+    if (utt && !seg && now - lastVoiceAt > 750) { const u = utt; utt = null; onUtterance(u, thr); }
+  }
+}
+function analyse(u, thr) {
+  const fr = u.frames.filter(f => f.r > thr), dur = (u.segs.length ? u.segs[u.segs.length - 1].end : u.start) - u.start;
+  const ps = fr.map(f => f.p).filter(p => p > 0).sort((a, b) => a - b);
+  const med = ps.length ? ps[Math.floor(ps.length / 2)] : 0, max = ps.length ? ps[ps.length - 1] : 0;
+  const voiced = fr.length ? ps.length / fr.length : 0;
+  const loudness = fr.length ? fr.reduce((s, f) => s + f.r, 0) / fr.length / thr : 0;   // 기준선 대비 배수
+  // 음절 수 = 에너지 봉우리
+  let syl = 0, rising = true, peak = 0;
+  const env = u.frames.map(f => f.r);
+  for (let i = 1; i < env.length; i++) {
+    if (env[i] > env[i - 1]) { if (!rising) rising = true; peak = Math.max(peak, env[i]); }
+    else if (rising && peak > thr && env[i] < peak * 0.6) { syl++; rising = false; peak = 0; }
+  }
+  if (rising && peak > thr) syl++;
+  syl = Math.max(1, syl);
+  // 억양
+  const vf = fr.filter(f => f.p > 0); let contour = 'flat';
+  if (vf.length >= 6) {
+    const third = Math.floor(vf.length / 3), mean = a => a.reduce((s, f) => s + f.p, 0) / a.length;
+    const a = mean(vf.slice(0, third)), b = mean(vf.slice(-third));
+    if (b > a * 1.12) contour = 'up'; else if (b < a * 0.88) contour = 'down';
+  }
+  const longest = Math.max(0, ...u.segs.map(s => s.end - s.start)) / 1000;
+  return { dur: dur / 1000, med, max, voiced, loudness, syl, contour, longest, rate: syl / Math.max(0.2, dur / 1000) };
+}
+function classify(a) {
+  if (a.dur < 0.12) return null;
+  if (a.voiced < 0.3) return null;                      // 물건 소리·잡음
+  if (a.med && a.med < 240) return 'adult';             // 어른 목소리
+  if (a.longest > 0.9 && a.loudness > 2.2 && a.voiced > 0.7 && a.med >= 300) return 'cry';
+  if (a.syl >= 3 && a.rate > 4 && a.med > 350 && a.longest < 0.5) return 'laugh';
+  if ((a.max > 950 && a.loudness > 1.5) || (a.med > 650 && a.loudness > 2)) return 'squeal';
+  if (a.longest > 0.5 && a.contour === 'down' && a.loudness > 1.2) return 'fuss';
+  if (a.syl >= 2) return 'babble';
+  return 'single';
+}
+const KIND_KO = { babble: '옹알이', single: '한마디', laugh: '웃음', squeal: '꺅 소리', fuss: '칭얼', cry: '울음', adult: '어른 목소리' };
+
+/* ============ 상황 + 해석 ============ */
+const hrsSince = k => DB.ctx[k] ? (Date.now() - DB.ctx[k]) / 36e5 : null;
+function interpret(kind, a) {
+  const fed = hrsSince('fed'), woke = hrsSince('woke'), out = [];
+  const hungry = fed !== null && fed > 2.7, sleepy = (woke !== null && woke > 3.0) || nightMode();
+  if (kind === 'babble') {
+    if (a.contour === 'up') out.push('말 거는 중 — 대답해 주면 또 해요');
+    else if (a.contour === 'down') out.push('혼자 소리 놀이 (자기 목소리 실험)');
+    else out.push('소리 연습 중');
+    if (a.syl >= 3) out.push(`${a.syl}음절 이어 붙이기 — 반복 옹알이`);
+  }
+  if (kind === 'single') out.push(a.contour === 'up' ? '부르는 소리 같아요' : '관심 표현');
+  if (kind === 'laugh') out.push('즐거움 — 방금 한 놀이를 한 번 더');
+  if (kind === 'squeal') out.push(a.loudness > 3 ? '신남 또는 뭔가 원함 (손 뻗는지 보세요)' : '신남');
+  if (kind === 'fuss' || kind === 'cry') {
+    if (hungry) out.push(`배고픔 가능성 (먹은 지 ${fed.toFixed(1)}시간)`);
+    if (sleepy) out.push(woke !== null ? `졸림 가능성 (깬 지 ${woke.toFixed(1)}시간)` : '졸림 가능성 (밤 시간)');
+    if (!hungry && !sleepy) out.push('지루함·안아 달라 · 기저귀 확인');
+    if (fed === null && woke === null) out.push('부모 화면에 먹은 시간·깬 시간을 눌러 주면 더 정확해요');
+  }
+  return out;
+}
+
+/* ============ 대답 만들기 ============ */
+const EXPAND = {
+  바: ['바바! 바나나? 바나나 맛있지~', '바바바! 빠이빠이?'],
+  빠: ['빠빠! 아빠? 아빠 여기 있지~', '빠빠빠! 아빠 불렀어?'],
+  마: ['마마! 엄마? 엄마 여기 있어~', '맘마? 맘마 먹을까?'],
+  다: ['다다! 다 했어? 우와~', '다다다! 다 먹었어?'],
+  가: ['가가! 가자~ 어디 갈까?', '까꿍? 가가 까꿍!'],
+  아: ['아~! 아, 그랬구나~', '아아? 정말~?'],
+  냠: ['냠냠! 맛있어? 냠냠냠~', '냠냠! 맘마 먹자~'],
+  응: ['응! 응~ 그래그래~', '응? {N}야 불렀어?'],
+  멍: ['멍멍! 멍멍이? 멍멍이 어딨지~', '멍멍! 강아지가 멍멍~'],
+  이: ['이이! {N}? 맞아 {N}야~', '이이이! 이거?'],
+};
+function echoOf(a) { const n = Math.min(4, Math.max(1, a.syl)); return '아'.repeat(n); }
+async function respond(kind, a) {
+  const mong = document.getElementById('mong');
+  const e = echoOf(a), q = a.contour === 'up' ? '?' : (a.contour === 'down' ? '~' : '!');
+  if (kind === 'babble' || kind === 'single') {
+    const lines = a.contour === 'up'
+      ? [`${e}${q} {N}가 몽이한테 물어봤어?`, `${e}${q} 정말~? 그랬구나!`, `${e}${q} 또 말해 줘~`]
+      : a.contour === 'down'
+      ? [`${e}${q} 그렇구나~`, `${e}${q} 맞아 맞아~`, `우와, {N} 말 잘한다~ ${e}!`]
+      : [`${e}! 몽이도 ${e}!`, `${e}! {N} 목소리 예쁘다~`, `응! ${e}! 그랬어~?`];
+    if (kind === 'single') lines.push('응? {N}야, 몽이 불렀어?');
+    mong.classList.add('bounce'); setTimeout(() => mong.classList.remove('bounce'), 1100);
+    await say(pick(lines));
+  } else if (kind === 'laugh') {
+    mong.classList.add('bounce'); setTimeout(() => mong.classList.remove('bounce'), 1100);
+    await say(pick(['히히히! {N}가 웃었다~ 몽이도 좋아!', '까르르~ {N} 웃음소리 최고야!', '히히, 또 웃어 줘~']));
+  } else if (kind === 'squeal') {
+    await say(pick(['꺄~! {N} 신났구나!', '우와~ {N} 목소리 크다! 신나~', '꺄아! 뭐가 좋아~?']));
+  } else if (kind === 'fuss') {
+    await say(pick(['에구, 왜 그래~? 몽이 여기 있어.', '괜찮아 괜찮아~ 엄마 아빠 여기 있어.', '응~ 힘들었어? 토닥토닥.']), { pitch: 1.2, rate: 75 });
+  }
+}
+
+let crySegs = [];
+async function onUtterance(u, thr) {
+  const a = analyse(u, thr), kind = classify(a);
+  if (!kind) return;
+  if (ended) { showThink(kind, a, interpret(kind, a)); return; }   // 마이크 테스트
+  const now = performance.now();
+  if (kind === 'adult') { markServe(); return; }      // 어른이 말함 → {N} 대답을 기다림
+  const isTurn = now - lastServeAt < 5000 && kind !== 'cry';
+  const d = day();
+  if (isTurn) { d.turns++; chain++; d.bestChain = Math.max(d.bestChain, chain); } else chain = 1;
+  const meaning = interpret(kind, a);
+  logEvent({ kind, syl: a.syl, contour: a.contour, pitch: Math.round(a.med), dur: +a.dur.toFixed(2), turn: isTurn, meaning });
+  showThink(kind, a, meaning);
+  lastBabyAt = Date.now();
+  if (kind === 'cry') {
+    crySegs = crySegs.filter(t => now - t < 20000); crySegs.push(now);
+    if (crySegs.length >= 2) return crying();
+    return;
+  }
+  if (busy) return;
+  busy++;
+  try { await respond(kind, a); } finally { busy=Math.max(0,busy-1); lastActAt = Date.now(); }  // 대답 후엔 마이크 열고 {N} 차례를 기다림
+  if (kind === 'fuss') {
+    const recent = day().events.filter(e => e.kind === 'fuss' && Date.now() - e.ts < 90000).length;
+    if (recent >= 3) showAlert('{N}가 칭얼거려요 — ' + (meaning[0] || '안아 주세요'), 8000);
+  }
+}
+async function crying() {
+  if (cryMode) return; cryMode = true; songStop = true; speechSynthesis.cancel();
+  const meaning = interpret('cry', {});
+  showAlert('{N}가 울어요 — 안아 주세요' + (meaning[0] ? ' · ' + meaning[0] : ''), 0);
+  try { if (navigator.vibrate) navigator.vibrate(300); } catch (e) {}
+  // 어른이 올 때까지 몽이는 조용히 한마디만, 놀이는 멈춤
+  await wait(400); busy++;
+  await say('{N}야, 괜찮아. 엄마 아빠 불러 줄게.', { pitch: 1.1, rate: 70 });
+  busy=Math.max(0,busy-1);
+  logEvent({ kind: 'alert', note: '울음 감지 — 어른 호출' });
+}
+let cryMode = false;
+function clearCry() { cryMode = false; crySegs = []; document.getElementById('alert').classList.remove('on'); }
+document.getElementById('alert').onclick = clearCry;
+
+/* ============ 놀이 프로그램 (몽이가 알아서) ============ */
+const ANIMALS = [['🐶', '멍멍이', '멍멍! 멍멍!'], ['🐱', '야옹이', '야옹~ 야옹~'], ['🐮', '음매 소', '음매~ 음매~'],
+  ['🦆', '오리', '꽥꽥! 꽥꽥!'], ['🐷', '꿀꿀 돼지', '꿀꿀! 꿀꿀!'], ['🚗', '자동차', '빵빵! 빵빵!'], ['🐑', '양', '메에~ 메에~']];
+const CHATS = ['{N}야~ 몽이는 {N}가 제일 좋아!', '{N}야, 오늘 맘마 맛있게 먹었어?', '{N} 손 어디 있지? 여기 있네~ 짝짝!',
+  '{N}야, 엄마는 어디 있을까? 아빠는 어디 있을까?', '몽이 귀 봐 봐, 길~지? 쫑긋쫑긋!', '{N}야, 우리 같이 박수 쳐 볼까? 짝짝짝!',
+  '{N} 발가락 꼼지락꼼지락~', '{N}야, 몽이한테 무슨 말 해 줄래?'];
+let agendaIdx = 0, lastBabyAt = 0, lastActAt = 0;
+function agenda() {
+  if (nightMode()) return ['lullaby', 'chat', 'clip', 'lullaby'];
+  return ['name', 'peek', 'song', 'animal', 'chat', 'clap', 'clip', 'name', 'song', 'animal', 'peek', 'chat'];
+}
+async function act(what) {
+  if (ended || cryMode) return;
+  busy++; songStop = false; lastActAt = Date.now();
+  const mong = document.getElementById('mong'), pic = document.getElementById('pic');
+  try {
+    if (what === 'greet') {
+      mong.classList.add('wave');
+      await say(`{N}야~ 안녕! ${FRIEND} 왔어! 반가워~`); mong.classList.remove('wave');
+    } else if (what === 'name') {
+      await say(`{N}야~`); await wait(2500); await say(pick(['몽이 여기 있지~', '우와, 몽이 봤어?', `{N}야, 사랑해~`]));
+    } else if (what === 'peek') {
+      await say('까꿍 놀이 하자!');
+      for (let i = 0; i < 3 && !songStop; i++) {
+        mong.classList.add('hide'); await say(pick(['몽이 어디 있~게?', '어디 갔지~?', '없~다!']), { pitch: 1.3 });
+        await wait(1200); mong.classList.remove('hide'); mong.classList.add('bounce');
+        await say('까꿍!', { pitch: 1.8 }); setTimeout(() => mong.classList.remove('bounce'), 1000); await wait(1800);
+      }
+    } else if (what === 'song') {
+      const k = pick(['star', 'play', 'peek']);
+      await say(`{N}야, 몽이가 노래 불러 줄게. ${T(SONGS[k].title).replace(/\{N\}/g,'')}!`); await sing(k);
+      await say(pick(['짝짝짝! 노래 끝~', '재밌었어? 또 부를까?']));
+    } else if (what === 'lullaby') {
+      document.body.classList.add('dim');
+      await say(`{N}야, 자장가 불러 줄게.`, { pitch: 1.1, rate: 70 }); await sing('lullaby');
+      document.body.classList.toggle('dim', dimOn());
+    } else if (what === 'animal') {
+      const [em, nm, snd] = pick(ANIMALS);
+      pic.textContent = em; pic.classList.add('on');
+      await say(`이건 ${nm}야. ${snd}`); await wait(1500); await say(snd); await wait(2500);
+      pic.classList.remove('on');
+    } else if (what === 'clap') {
+      mong.classList.add('clap'); const t = AC.currentTime;
+      await say('짝짜꿍 하자! 짝짜꿍~ 짝짜꿍~');
+      for (let i = 0; i < 6; i++) clapSound(AC.currentTime + 0.1 + i * 0.45);
+      await wait(2800); mong.classList.remove('clap');
+      mong.classList.add('shake'); await say('도리도리~ 도리도리~'); await wait(1200); mong.classList.remove('shake');
+      mong.classList.add('wave'); await say('빠이빠이~ 하고 손 흔들기!'); await wait(1200); mong.classList.remove('wave');
+    } else if (what === 'chat') {
+      await say(pick(CHATS));
+    } else if (what === 'clip') {
+      const cl = await clipList();
+      if (cl.length) { const c = pick(cl); await say(`{N}야, 들어 봐~ ${c.name}!`); await playClip(c.id); }
+      else await say(pick(CHATS));
+    } else if (what === 'bye') {
+      mong.classList.add('wave');
+      await say(`{N}야, 오늘 ${FRIEND}랑 재밌었어! 이제 엄마 아빠랑 놀자~ 빠이빠이~`);
+      mong.classList.remove('wave');
+    }
+    if (what !== 'bye') logEvent({ kind: 'play', what });
+  } finally { busy=Math.max(0,busy-1); muteUntil = performance.now() + 600; markServe(); lastActAt = Date.now(); }
+  await wait(1500);
+}
+async function program() {
+  while (!ended) {
+    await wait(500);
+    if (ended) break;
+    if (busy || cryMode || utt) continue;
+    const quiet = Date.now() - Math.max(lastBabyAt, lastActAt);
+    if (quiet > S.idle * 1000) { const a = agenda(); await act(a[agendaIdx++ % a.length]); }
+  }
+}
+
+/* ============ 세션 ============ */
+let ticking = false, ending = false;
+let ended = true, sessMin = 10, sessStart = 0, wakeLock = null;
+const nightMode = () => { const h = new Date().getHours(); return h >= 20 || h < 6; };
+const dimOn = () => S.dim || nightMode();
+document.querySelectorAll('#lenRow .chip').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#lenRow .chip').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); sessMin = +b.dataset.min; });
+document.getElementById('pName').value = PROF.name || '';
+document.getElementById('pBirth').value = PROF.birth || '';
+document.getElementById('go').onclick = () => {
+  const n = document.getElementById('pName').value.trim(), b = document.getElementById('pBirth').value;
+  if (!n) { document.getElementById('startNote').textContent = '아이 이름을 넣어 주세요.'; return; }
+  if (n !== (PROF.name || '') || b !== (PROF.birth || '')) {      // 바뀌면 저장 후 다시 열기
+    try { localStorage.setItem(PROF_KEY, JSON.stringify({ name: n, birth: b })); } catch (e) {}
+    location.reload(); return;
+  }
+  startSession();
+};
+document.getElementById('again').onclick = () => { document.getElementById('ended').classList.remove('on'); document.getElementById('start').style.display = 'flex'; };
+async function startSession() {
+  try {
+    if (!AC) initAudio(); await AC.resume();
+    if (!analyser) await initMic();
+  } catch (e) {
+    document.getElementById('startNote').textContent = '마이크를 쓸 수 없어요. 「실행.bat」으로 열고, 주소창 왼쪽에서 마이크를 허용해 주세요. (' + e.name + ')';
+    return;
+  }
+  document.getElementById('start').style.display = 'none';
+  document.body.classList.toggle('dim', dimOn());
+  ended = false; clearCry(); sessStart = Date.now(); lastBabyAt = 0; lastActAt = Date.now(); chain = 0;
+  day().sessions++; save();
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+  if (!ticking) { ticking = true; setInterval(listenTick, 25); }
+  program();
+  await act(nightMode() ? 'lullaby' : 'greet');
+}
+setInterval(() => {
+  if (ended || ending) return;
+  const left = sessMin * 60 - (Date.now() - sessStart) / 1000;
+  document.getElementById('timer').textContent = `남은 시간 ${Math.max(0, Math.floor(left / 60))}:${String(Math.max(0, Math.floor(left % 60))).padStart(2, '0')}`;
+  if (left <= 0) endSession();
+}, 1000);
+async function endSession() {
+  if (ended || ending) return; ending = true;
+  songStop = true; speechSynthesis.cancel(); clearCry(); await wait(400);
+  busy = 0; songStop = false; await act('bye'); ended = true; ending = false;
+  const d = day(); d.minutes += Math.round((Date.now() - sessStart) / 60000); save();
+  try { wakeLock && wakeLock.release(); } catch (e) {}
+  const ev = d.events.filter(e => e.ts >= sessStart);
+  const c = k => ev.filter(e => e.kind === k).length;
+  document.getElementById('endSum').innerHTML = T(
+    `이번에 {N}가 낸 소리: 옹알이 ${c('babble') + c('single')}번 · 웃음 ${c('laugh')}번 · 꺅 ${c('squeal')}번<br>` +
+    `주고받기(대화 턴) ${ev.filter(e => e.turn).length}번 · 오늘 가장 긴 주고받기 ${d.bestChain}번 연속`);
+  document.getElementById('ended').classList.add('on'); document.getElementById('timer').textContent = '';
+  renderPanel();
+}
+
+/* ============ 기록 ============ */
+function logEvent(e) {
+  const d = day(); e.ts = Date.now(); d.events.push(e);
+  if (d.events.length > 800) d.events.splice(0, d.events.length - 800);
+  save(); renderPanel(); syncQueue(e);
+}
+function showThink(kind, a, meaning) {
+  const el = document.getElementById('think');
+  if (!S.think) { el.innerHTML = ''; return; }
+  const arrow = { up: '↗', down: '↘', flat: '→' }[a.contour] || '';
+  el.innerHTML = `<span class="tag">들림: ${KIND_KO[kind]} ${a.syl}음절 ${arrow}</span>` +
+    meaning.slice(0, 2).map(m => `<span class="tag">아마도: ${m}</span>`).join('');
+  clearTimeout(showThink.t); showThink.t = setTimeout(() => el.innerHTML = '', 9000);
+}
+function showAlert(txt, ms) {
+  const el = document.getElementById('alert'); el.textContent = T(txt) + '  (누르면 닫혀요)'; el.classList.add('on');
+  if (ms) setTimeout(() => { if (!cryMode) el.classList.remove('on'); }, ms);
+}
+function renderPanel() {
+  const d = day(), ev = d.events, c = k => ev.filter(e => e.kind === k).length;
+  document.getElementById('sumTbl').innerHTML = [
+    ['옹알이', c('babble')], ['한마디 소리', c('single')], ['웃음', c('laugh')], ['꺅 소리', c('squeal')],
+    ['칭얼 / 울음', `${c('fuss')} / ${c('cry')}`], ['대화 턴 (몽이와)', d.turns], ['가장 긴 주고받기', d.bestChain + '번 연속'],
+    ['오늘 놀이 시간', d.minutes + '분 · ' + d.sessions + '회']
+  ].map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+  const t = ts => { const x = new Date(ts); return `${x.getHours()}:${String(x.getMinutes()).padStart(2, '0')}`; };
+  document.getElementById('log').innerHTML = ev.filter(e => KIND_KO[e.kind] || e.kind === 'alert').slice(-12).reverse().map(e =>
+    e.kind === 'alert' ? `<div><span class="t">${t(e.ts)}</span><b style="color:var(--warn)">${e.note}</b></div>` :
+    `<div><span class="t">${t(e.ts)}</span><b>${KIND_KO[e.kind]}</b> ${e.syl}음절 ${({ up: '↗', down: '↘', flat: '→' })[e.contour]} ${e.pitch ? e.pitch + 'Hz' : ''}${e.turn ? ' · 대답' : ''}${e.meaning && e.meaning[0] ? ' — ' + e.meaning[0] : ''}${e.heard ? ' · 들은 소리 「' + e.heard + '」' : ''}</div>`).join('') || '<div class="small">아직 기록이 없어요.</div>';
+  const ctx = [];
+  if (DB.ctx.fed) ctx.push(`먹은 지 ${hrsSince('fed').toFixed(1)}시간`);
+  if (DB.ctx.woke) ctx.push(`깬 지 ${hrsSince('woke').toFixed(1)}시간`);
+  if (DB.ctx.diaper) ctx.push(`기저귀 ${hrsSince('diaper').toFixed(1)}시간 전`);
+  document.getElementById('ctxLine').textContent = ctx.join(' · ') || '아직 입력 없음';
+}
+
+/* ============ 부모 화면 ============ */
+const panel = document.getElementById('panel');
+let holdT;
+const pb = document.getElementById('parentBtn');
+pb.addEventListener('pointerdown', () => { holdT = setTimeout(() => { panel.classList.add('on'); renderPanel(); }, 800); });
+['pointerup', 'pointerleave'].forEach(ev => pb.addEventListener(ev, () => clearTimeout(holdT)));
+pb.addEventListener('dblclick', () => { panel.classList.add('on'); renderPanel(); });
+document.getElementById('closePanel').onclick = () => panel.classList.remove('on');
+document.querySelectorAll('[data-ctx]').forEach(b => b.onclick = () => { DB.ctx[b.dataset.ctx] = Date.now(); save(); renderPanel(); });
+const sylRow = document.getElementById('sylRow');
+Object.keys(EXPAND).forEach(s => {
+  const b = document.createElement('button'); b.className = 'chip'; b.textContent = s; sylRow.appendChild(b);
+  b.onclick = async () => {
+    const d = day(); const last = [...d.events].reverse().find(e => KIND_KO[e.kind]);
+    if (last && Date.now() - last.ts < 60000) { last.heard = s; save(); }
+    renderPanel(); if (ended || cryMode) return;
+    songStop = true; speechSynthesis.cancel(); await wait(250); songStop = false;
+    busy++; try { await say(pick(EXPAND[s])); } finally { busy=Math.max(0,busy-1); }
+  };
+});
+document.querySelectorAll('#cmdRow .chip').forEach(b => b.onclick = async () => {
+  const c = b.dataset.cmd; panel.classList.remove('on');
+  if (ended) return;
+  if (c === 'bye') return endSession();
+  clearCry(); songStop = true; speechSynthesis.cancel(); await wait(400);
+  busy = 0; songStop = false;
+  act({ song: 'song', lullaby: 'lullaby', peek: 'peek', animal: 'animal', clap: 'clap', name: 'name', clip: 'clip' }[c]);
+});
+document.getElementById('mong').addEventListener('pointerdown', async () => {     // {N}가 화면을 만지면
+  if (ended || busy || cryMode) return;
+  lastBabyAt = Date.now(); logEvent({ kind: 'touch' });
+  const m = document.getElementById('mong'); m.classList.add('bounce'); setTimeout(() => m.classList.remove('bounce'), 1100);
+  busy++; try { await say(pick(['히히, 간지러워~!', '우와, {N}가 몽이 만졌다!', '톡톡! 안녕~'])); } finally { busy=Math.max(0,busy-1); }
+});
+// 설정
+const bind = (id, key, ev = 'input', conv = v => +v) => { const el = document.getElementById(id);
+  if (el.type === 'checkbox') el.checked = S[key]; else el.value = S[key];
+  el.addEventListener(ev, () => { S[key] = el.type === 'checkbox' ? el.checked : conv(el.value); saveSettings();
+    if (key === 'dim') document.body.classList.toggle('dim', dimOn()); }); };
+bind('sens', 'sens'); bind('rate', 'rate'); bind('idleSel', 'idle', 'change'); bind('dimChk', 'dim', 'change'); bind('thinkChk', 'think', 'change');
+document.getElementById('voiceSel').addEventListener('change', e => { S.voice = e.target.value; saveSettings(); });
+let micTesting = false;
+document.getElementById('testMic').onclick = async () => {
+  try { if (!AC) initAudio(); await AC.resume(); if (!analyser) await initMic(); } catch (e) { document.getElementById('micLvl').textContent = '마이크 허용 필요'; return; }
+  micTesting = !micTesting; if (ended && micTesting) { const iv = setInterval(() => { if (!micTesting) return clearInterval(iv); listenTick(); }, 25); }
+  if (!micTesting) document.getElementById('micLvl').textContent = '';
+};
+document.getElementById('exportBtn').onclick = () => {
+  const blob = new Blob([JSON.stringify({ child: NAME, birth: PROF.birth || '', exported: new Date().toISOString(), days: DB.days }, null, 1)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `소리기록_${todayKey()}.json`; a.click();
+};
+
+/* ============ 목소리 상자 (IndexedDB) ============ */
+function idb() { return new Promise((res, rej) => { const r = indexedDB.open('iaFriendClips', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('clips', { keyPath: 'id', autoIncrement: true });
+  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function clipList() { try { const db = await idb(); return await new Promise(r => { const q = db.transaction('clips').objectStore('clips').getAll();
+  q.onsuccess = () => r(q.result.map(c => ({ id: c.id, name: c.name }))); q.onerror = () => r([]); }); } catch (e) { return []; } }
+async function clipGet(id) { const db = await idb(); return new Promise(r => { const q = db.transaction('clips').objectStore('clips').get(id); q.onsuccess = () => r(q.result); }); }
+async function playClip(id) {
+  const c = await clipGet(id); if (!c) return;
+  const au = new Audio(URL.createObjectURL(c.blob)); au.volume = nightMode() ? 0.7 : 1;
+  await new Promise(r => { au.onended = r; au.onerror = r; au.play().catch(r); const iv = setInterval(() => { if (songStop || ended) { au.pause(); clearInterval(iv); r(); } }, 200); });
+}
+async function renderClips() {
+  const cl = await clipList(), box = document.getElementById('clips'); box.innerHTML = '';
+  cl.forEach(c => { const d = document.createElement('div'); d.innerHTML = `<span>${c.name.replace(/</g, '&lt;')}</span>`;
+    const p = document.createElement('button'); p.className = 'chip'; p.textContent = '▶'; p.onclick = () => { songStop = false; playClip(c.id); };
+    const x = document.createElement('button'); x.className = 'chip'; x.textContent = '삭제';
+    x.onclick = async () => { const db = await idb(); db.transaction('clips', 'readwrite').objectStore('clips').delete(c.id).onsuccess = renderClips; };
+    const g = document.createElement('span'); g.append(p, ' ', x); d.appendChild(g); box.appendChild(d); });
+  if (!cl.length) box.innerHTML = '<div class="small">아직 녹음이 없어요.</div>';
+}
+document.getElementById('recBtn').onclick = async (ev) => {
+  const btn = ev.target;
+  if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
+  try { if (!AC) initAudio(); if (!micStream) await initMic(); } catch (e) { btn.textContent = '마이크 허용 필요'; return; }
+  const chunks = []; recorder = new MediaRecorder(micStream);
+  busy++;                                                     // 녹음 중엔 몽이 듣기 멈춤
+  recorder.ondataavailable = e => chunks.push(e.data);
+  recorder.onstop = async () => {
+    busy=Math.max(0,busy-1); btn.textContent = '● 녹음';
+    const name = document.getElementById('clipName').value.trim() || `녹음 ${new Date().toLocaleString('ko-KR')}`;
+    const db = await idb(); db.transaction('clips', 'readwrite').objectStore('clips').add({ name, blob: new Blob(chunks, { type: recorder.mimeType }), ts: Date.now() }).onsuccess = renderClips;
+    document.getElementById('clipName').value = '';
+  };
+  recorder.start(); btn.textContent = '■ 멈추기';
+};
+renderClips(); renderPanel();
+
+/* ============ 주간 보고서 ============ */
+const dkey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function lastSunday(d = new Date()) { const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - x.getDay()); return x; }
+function weekStats(endDate) {                       // endDate 포함 7일
+  const ev = [];
+  let sessions = 0, minutes = 0, turns = 0, best = 0;
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(endDate); d.setDate(d.getDate() - i);
+    const x = DB.days[dkey(d)]; if (!x) continue;
+    sessions += x.sessions; minutes += x.minutes; turns += x.turns; best = Math.max(best, x.bestChain);
+    ev.push(...x.events);
+  }
+  const c = k => ev.filter(e => e.kind === k).length;
+  const bab = ev.filter(e => e.kind === 'babble');
+  const avgSyl = bab.length ? bab.reduce((s, e) => s + e.syl, 0) / bab.length : 0;
+  const heard = {}; ev.forEach(e => { if (e.heard) heard[e.heard] = (heard[e.heard] || 0) + 1; });
+  const hours = {}; ev.filter(e => ['babble','single','laugh','squeal'].includes(e.kind)).forEach(e => { const h = new Date(e.ts).getHours(); hours[h] = (hours[h] || 0) + 1; });
+  const peakH = Object.entries(hours).sort((a, b) => b[1] - a[1])[0];
+  const pitches = ev.filter(e => e.pitch > 0 && e.kind !== 'cry').map(e => e.pitch).sort((a, b) => a - b);
+  return { sessions, minutes, turns, best, babble: c('babble'), single: c('single'), laugh: c('laugh'), squeal: c('squeal'),
+    fuss: c('fuss'), cry: c('cry'), touch: c('touch'), avgSyl, long: bab.filter(e => e.syl >= 3).length, heard,
+    peakH: peakH ? +peakH[0] : null, pmin: pitches[0] || 0, pmax: pitches[pitches.length - 1] || 0, voc: c('babble') + c('single') };
+}
+function advice(w, prev) {
+  if (w.sessions === 0) return ['이번 주는 몽이 기록이 없어요. 짧게라도 5분 켜 주면 다음 주 보고서가 채워져요.'];
+  const out = [];
+  if (w.turns < 10) out.push('주고받기가 적어요. {N} 소리에 엄마·아빠가 먼저 따라 하고 3초 기다려 주세요.');
+  else out.push(`주고받기 ${w.turns}번 — 좋아요. 몽이 없이도 같은 방식으로 하루 5번만 더.`);
+  if (w.avgSyl && w.avgSyl < 2.2) out.push('짧은 소리가 많아요. 「바바바」「마마마」처럼 세 번 이어서 들려 주세요.');
+  if (w.heard['마'] || w.heard['빠']) out.push('「마/빠」 소리가 들렸어요. 엄마·아빠·맘마 같은 진짜 단어로 이어 주세요.');
+  if (AGE && AGE.months >= 9) out.push('가리키기·빠이빠이 같은 몸짓도 말만큼 중요해요. 엄마·아빠가 먼저 가리켜 보여 주세요.');
+  if (w.cry + w.fuss > 6) out.push('칭얼·울음이 잦았어요. 몽이 시간을 먹고 난 뒤·낮잠 깬 직후로 옮겨 보세요.');
+  if (prev && prev.voc && w.voc > prev.voc * 1.2) out.unshift(`소리가 지난주보다 ${Math.round((w.voc / prev.voc - 1) * 100)}% 늘었어요!`);
+  return out.slice(0, 4);
+}
+function ageNote() {
+  if (!AGE) return '생일을 넣으면 개월수에 맞는 기준이 나와요.';
+  const m = AGE.months;
+  if (m < 6) return '이 시기 기대: 웃음·소리 지르기·모음 옹알이.';
+  if (m < 9) return '이 시기 기대: 「바바·마마」 반복 옹알이, 이름 부르면 돌아보기.';
+  if (m < 12) return '이 시기 기대: 여러 소리 섞은 옹알이, 몸짓(빠이빠이·가리키기), 첫 단어는 10~14개월.';
+  if (m < 18) return '이 시기 기대: 첫 단어들, 가리키며 소리 내기, 간단한 말 알아듣기.';
+  return '이 시기 기대: 단어가 빠르게 늘고 두 단어를 붙이기 시작해요.';
+}
+let repEnd = null;
+function drawReport(endDate, H) {
+  repEnd = new Date(endDate);
+  const w = weekStats(endDate), pe = new Date(endDate); pe.setDate(pe.getDate() - 7); const prev = weekStats(pe);
+  const cv = document.getElementById('repCanvas'); if (H) cv.height = H;
+  const g = cv.getContext('2d'), W = cv.width;
+  const F = (sz, wt = 400) => `${wt} ${sz}px "Malgun Gothic","Apple SD Gothic Neo",sans-serif`;
+  const box = (x, y, w2, h, r) => { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w2, h, r); else g.rect(x, y, w2, h); g.fill(); };
+  const wrap = (txt, maxW) => { const out = []; let line = ''; for (const ch of txt) { if (g.measureText(line + ch).width > maxW) { out.push(line); line = ch; } else line += ch; } if (line) out.push(line); return out; };
+  g.fillStyle = '#fbf6ee'; g.fillRect(0, 0, W, cv.height);
+  g.fillStyle = '#cfe6f7'; g.fillRect(0, 0, W, 210);
+  g.fillStyle = '#3b3330'; g.font = F(58, 700); g.fillText(T('{N} 주간 소리 보고서'), 60, 100);
+  const s0 = new Date(endDate); s0.setDate(s0.getDate() - 6);
+  g.font = F(32); g.fillStyle = '#5b5049';
+  g.fillText(`${s0.getMonth()+1}/${s0.getDate()} ~ ${endDate.getMonth()+1}/${endDate.getDate()}${AGE ? '  ·  만 ' + AGE.months + '개월' : ''}  ·  몽이와 ${w.sessions}회 ${w.minutes}분`, 60, 160);
+  let y = 270;
+  const delta = (a, b) => b ? (a >= b ? `▲${a - b}` : `▼${b - a}`) : '';
+  [['옹알이', w.babble, delta(w.babble, prev.babble)], ['대화 턴', w.turns, delta(w.turns, prev.turns)],
+   ['웃음', w.laugh, delta(w.laugh, prev.laugh)], ['최장 주고받기', w.best + '번', '']].forEach((t, i) => {
+    const x = 60 + (i % 2) * 490, yy = y + Math.floor(i / 2) * 200;
+    g.fillStyle = '#ffffff'; box(x, yy, 470, 175, 22);
+    g.fillStyle = '#8a7d74'; g.font = F(30); g.fillText(t[0], x + 30, yy + 52);
+    g.fillStyle = '#3b3330'; g.font = F(72, 700); g.fillText(String(t[1]), x + 30, yy + 140);
+    if (t[2]) { g.fillStyle = t[2][0] === '▲' ? '#3c8d5a' : '#c0583f'; g.font = F(28, 700); g.fillText(t[2] + ' 지난주 대비', x + 230, yy + 135); }
+  });
+  y += 450;
+  g.fillStyle = '#3b3330'; g.font = F(36, 700); g.fillText('소리 모양', 60, y); y += 56;
+  g.font = F(31); g.fillStyle = '#4a403a';
+  const heardTop = Object.entries(w.heard).sort((a, b) => b[1] - a[1]).slice(0, 4).map(h => `「${h[0]}」${h[1]}`).join(' ');
+  [`평균 ${w.avgSyl ? w.avgSyl.toFixed(1) : '-'}음절 · 3음절 이상 반복 옹알이 ${w.long}번`,
+   `한마디 ${w.single} · 꺅 ${w.squeal} · 칭얼 ${w.fuss} · 울음 ${w.cry} · 화면 만지기 ${w.touch}`,
+   `목소리 높이 ${w.pmin ? w.pmin + '~' + w.pmax + 'Hz' : '-'}${w.peakH !== null ? ' · 제일 수다스러운 시간 ' + w.peakH + '시' : ''}`,
+   `엄마·아빠가 들은 소리: ${heardTop || '아직 없음 (부모 화면에서 눌러 주세요)'}`
+  ].forEach(l => wrap(l, W - 120).forEach(x => { g.fillText(x, 60, y); y += 48; }));
+  y += 30;
+  g.fillStyle = '#3b3330'; g.font = F(36, 700); g.fillText('다음 주에 해 볼 것', 60, y); y += 56;
+  g.font = F(31); g.fillStyle = '#4a403a';
+  advice(w, prev).forEach(a => { wrap('• ' + T(a), W - 130).forEach((l, i) => { g.fillText(i ? '   ' + l : l, 60, y); y += 46; }); y += 8; });
+  y += 24;
+  g.font = F(28); const an = wrap(ageNote(), W - 140);
+  g.fillStyle = '#ffffff'; box(40, y, W - 80, 50 + an.length * 40, 20);
+  g.fillStyle = '#5b5049'; an.forEach((l, i) => g.fillText(l, 70, y + 50 + i * 40));
+  y += 80 + an.length * 40;
+  g.fillStyle = '#9c918a'; g.font = F(24);
+  const foot = wrap('몽이 앞에서 낸 소리만 셌어요. 소리 해석은 추측이고, 걱정되는 점은 소아과·영유아검진에서 확인하세요.', W - 120);
+  foot.forEach((l, i) => g.fillText(l, 60, y + i * 34));
+  const need = y + foot.length * 34 + 40;
+  if (!H && Math.abs(need - cv.height) > 4) return drawReport(endDate, need);
+  document.getElementById('repNote').textContent = w.sessions ? '' : '이 주는 기록이 없어요.';
+}
+function reportEndFor(now = new Date()) {         // 일요일 18시 이후면 오늘까지, 아니면 지난 일요일까지
+  const sun = lastSunday(now);
+  if (now.getDay() === 0 && now.getHours() < 18) sun.setDate(sun.getDate() - 7);
+  return sun;
+}
+function openReport(end) {
+  drawReport(end || reportEndFor()); document.getElementById('report').classList.add('on');
+  DB.lastReportSeen = dkey(repEnd); save(); document.getElementById('weekBanner').style.display = 'none';
+}
+document.getElementById('openReport').onclick = () => { panel.classList.remove('on'); openReport(); };
+document.getElementById('weekBanner').onclick = () => openReport();
+document.getElementById('repClose').onclick = () => document.getElementById('report').classList.remove('on');
+document.getElementById('repPrev').onclick = () => { const d = new Date(repEnd); d.setDate(d.getDate() - 7); drawReport(d); };
+document.getElementById('repNext').onclick = () => { const d = new Date(repEnd); d.setDate(d.getDate() + 7); if (d <= new Date()) drawReport(d); };
+document.getElementById('repShare').onclick = () => {
+  document.getElementById('repCanvas').toBlob(async b => {
+    const f = new File([b], `${NAME}_주간보고서_${dkey(repEnd)}.png`, { type: 'image/png' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: T('{N} 주간 보고서') }); return; }
+    } catch (e) { if (e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = f.name; a.click();
+    document.getElementById('repNote').textContent = '이미지로 저장했어요. 카톡에서 사진으로 보내 주세요.';
+  }, 'image/png');
+};
+(function weeklyBanner() {                          // 새 주간 보고서가 나오면 시작 화면에 알림
+  const end = reportEndFor(), w = weekStats(end);
+  if (w.sessions > 0 && DB.lastReportSeen !== dkey(end)) document.getElementById('weekBanner').style.display = 'block';
+})();
+
+/* ============ 클라우드 백업 (선택, 주소·키가 있을 때만) ============ */
+const SYNC_KEY = 'iaFriend.sync';
+const SYNC = (() => { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch (e) { return {}; } })();
+(function hashConfig() {                          // 설정 링크: …/#sync=주소|키 (한 번 열면 저장 후 주소창에서 지움)
+  const m = location.hash.match(/sync=([^|&]+)\|([^&]+)/);
+  if (!m) return;
+  SYNC.url = decodeURIComponent(m[1]); SYNC.key = decodeURIComponent(m[2]); SYNC._bf = true;
+  try { localStorage.setItem('iaFriend.sync', JSON.stringify(SYNC)); } catch (e) {}
+  history.replaceState(null, '', location.pathname + location.search);
+})();
+SYNC.queue = SYNC.queue || []; SYNC.device = SYNC.device || Math.random().toString(36).slice(2, 10);
+if (SYNC._bf) {                                    // 처음 연결하면 이 기기에 있던 기록도 올림
+  delete SYNC._bf; SYNC.queue = SYNC.queue || []; SYNC.device = SYNC.device || Math.random().toString(36).slice(2, 10);
+  Object.values(DB.days).forEach(d => d.events.forEach(e => { if (e.ts && Date.now() - e.ts < 25 * 864e5) setTimeout(() => syncQueue(e)); }));
+}
+const saveSync = () => { try { localStorage.setItem(SYNC_KEY, JSON.stringify(SYNC)); } catch (e) {} };
+function syncQueue(e) {
+  if (!SYNC.url || !SYNC.key) return;
+  SYNC.queue.push({ ts: new Date(e.ts).toISOString(), kind: e.kind, syl: e.syl ?? null, contour: e.contour ?? null, pitch: e.pitch ?? null,
+    dur: e.dur ?? null, turn: !!e.turn, heard: e.heard ?? null, what: e.what || e.title || null, device: SYNC.device });
+  if (SYNC.queue.length > 3000) SYNC.queue.splice(0, SYNC.queue.length - 3000);
+  saveSync();
+}
+async function syncFlush() {
+  const st = document.getElementById('syncStat');
+  if (!SYNC.url || !SYNC.key) { st.textContent = '꺼짐 — 기록은 이 기기에만 있어요.'; return; }
+  if (!SYNC.queue.length) { st.textContent = '켜짐 · 모두 올라감' + (SYNC.last ? ' (' + new Date(SYNC.last).toLocaleString('ko-KR') + ')' : ''); return; }
+  const batch = SYNC.queue.slice(0, 200);
+  try {
+    const r = await fetch(SYNC.url.replace(/\/$/, '') + '/rest/v1/ia_events', { method: 'POST',
+      headers: Object.assign({ apikey: SYNC.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        SYNC.key.startsWith('eyJ') ? { Authorization: 'Bearer ' + SYNC.key } : {}),
+      body: JSON.stringify(batch) });
+    if (r.status === 400 || r.status === 403) { SYNC.queue.splice(0, batch.length); saveSync(); throw new Error('형식 거절 ' + r.status + ', 건너뜀'); }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    SYNC.queue.splice(0, batch.length); SYNC.last = Date.now(); saveSync();
+    st.textContent = `켜짐 · ${batch.length}건 올림, 남은 ${SYNC.queue.length}건`;
+  } catch (e) { st.textContent = `켜짐 · 올리기 실패(${e.message}) — 나중에 다시 시도해요. 남은 ${SYNC.queue.length}건`; }
+}
+['syncUrl', 'syncKey'].forEach(id => { const k = id === 'syncUrl' ? 'url' : 'key', el = document.getElementById(id); el.value = SYNC[k] || '';
+  el.addEventListener('change', () => { SYNC[k] = el.value.trim(); saveSync(); syncFlush(); }); });
+setInterval(syncFlush, 30000); syncFlush();
+
+</script>
+</body>
+</html>
