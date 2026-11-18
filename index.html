@@ -7,6 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#fbf6ee">
 <meta name="robots" content="noindex">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>몽이 — {N} 친구</title>
 <style>
 :root{
@@ -111,14 +113,10 @@ select,input[type=range]{max-width:58%}
 <div id="start">
   <h1>몽이 — {N} 친구</h1>
   <p id="ageLine"></p>
-  <p style="font-size:12px;margin:0">버전 5 · 놀이 12가지</p>
+  <p style="font-size:12px;margin:0" id="verLine"></p>
   <p>엄마·아빠가 옆에 있을 때 켜 주세요. 몽이는 {N} 소리를 듣고 대답하고, 말을 걸고, 노래를 불러요.<br>
-     마이크 소리는 이 기기 밖으로 나가지 않아요. 녹음은 저장하지 않아요(목소리 상자만 예외).</p>
-  <div class="prof">
-    <input id="pName" placeholder="아이 이름 (예: 하늘)" maxlength="6" style="width:150px">
-    <input id="pBirth" type="date" title="생일">
-  </div>
-  <div class="small" style="color:var(--soft);font-size:13px;margin-top:4px">이름·생일은 이 기기에만 저장돼요.</div>
+     마이크 소리는 밖으로 나가지 않아요.</p>
+
   <div class="row" id="lenRow">
     <span class="small" style="align-self:center">놀이 시간</span>
     <button class="chip" data-min="5">5분</button>
@@ -266,8 +264,22 @@ select,input[type=range]{max-width:58%}
 'use strict';
 /* ============ 기본 정보 ============ */
 /* 아이 이름·생일은 이 기기에만 저장 (코드에 없음) */
+const APP_VERSION = 6;
 const PROF_KEY = 'iaFriend.profile';
-const PROF = (() => { try { return JSON.parse(localStorage.getItem(PROF_KEY)) || {}; } catch (e) { return {}; } })();
+document.getElementById('verLine').textContent = `버전 ${APP_VERSION}`;
+(async function selfUpdate() {                       // 열 때마다 새 버전이 있는지 확인하고 있으면 바로 바꿈
+  try {
+    const t = await (await fetch(location.pathname + '?check=' + Date.now(), { cache: 'no-store' })).text();
+    const m = t.match(/const APP_VERSION = (\d+);/);
+    if (m && +m[1] > APP_VERSION) location.replace(location.pathname + '?v=' + m[1] + location.hash);
+  } catch (e) {}
+})();
+const PROF = (() => {
+  let p = {}; try { p = JSON.parse(localStorage.getItem(PROF_KEY)) || {}; } catch (e) {}
+  const m = location.hash.match(/me=([^|&]+)\|([^&]*)/);
+  if (m) { p = { name: decodeURIComponent(m[1]), birth: decodeURIComponent(m[2]) }; try { localStorage.setItem(PROF_KEY, JSON.stringify(p)); } catch (e) {} }
+  return p;
+})();
 const NAME = (PROF.name || '아가').trim(), FRIEND = '몽이';
 const BIRTH = PROF.birth ? new Date(PROF.birth + 'T00:00:00') : null;
 function hasBatchim(w) { const c = w.charCodeAt(w.length - 1) - 0xAC00; return c >= 0 && c <= 11171 && c % 28 !== 0; }
@@ -954,17 +966,7 @@ const nightMode = () => { const h = new Date().getHours(); return h >= 20 || h <
 const dimOn = () => S.dim;
 document.querySelectorAll('#lenRow .chip').forEach(b => b.onclick = () => {
   document.querySelectorAll('#lenRow .chip').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); sessMin = +b.dataset.min; });
-document.getElementById('pName').value = PROF.name || '';
-document.getElementById('pBirth').value = PROF.birth || '';
-document.getElementById('go').onclick = () => {
-  const n = document.getElementById('pName').value.trim(), b = document.getElementById('pBirth').value;
-  if (!n) { document.getElementById('startNote').textContent = '아이 이름을 넣어 주세요.'; return; }
-  if (n !== (PROF.name || '') || b !== (PROF.birth || '')) {      // 바뀌면 저장 후 다시 열기
-    try { localStorage.setItem(PROF_KEY, JSON.stringify({ name: n, birth: b })); } catch (e) {}
-    location.reload(); return;
-  }
-  startSession();
-};
+document.getElementById('go').onclick = () => startSession();
 document.getElementById('again').onclick = () => { document.getElementById('ended').classList.remove('on'); document.getElementById('start').style.display = 'flex'; };
 async function startSession() {
   try {
@@ -1268,7 +1270,6 @@ const SYNC = (() => { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) ||
   if (!m) return;
   SYNC.url = decodeURIComponent(m[1]); SYNC.key = decodeURIComponent(m[2]); SYNC._bf = true;
   try { localStorage.setItem('iaFriend.sync', JSON.stringify(SYNC)); } catch (e) {}
-  history.replaceState(null, '', location.pathname + location.search);
 })();
 SYNC.queue = SYNC.queue || []; SYNC.device = SYNC.device || Math.random().toString(36).slice(2, 10);
 if (SYNC._bf) {                                    // 처음 연결하면 이 기기에 있던 기록도 올림
