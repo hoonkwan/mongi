@@ -45,6 +45,9 @@ body.dim{--bg:#1d1a19;--ink:#e9e1da;--soft:#9c918a;--card:#2a2625;--line:#3a3433
 #think .tag{display:inline-block;padding:3px 10px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin:2px}
 #alert{position:fixed;top:0;left:0;right:0;padding:18px;text-align:center;font-size:22px;font-weight:700;background:var(--warn);color:#fff;transform:translateY(-110%);transition:transform .3s;z-index:5}
 #alert.on{transform:none}
+#ear{position:fixed;left:14px;bottom:14px;width:34px;height:34px;border-radius:50%;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;z-index:4}
+#ear i{display:block;width:10px;height:10px;border-radius:50%;background:var(--soft);transition:transform .08s,background .2s}
+#ear.hot i{background:var(--accent)}
 #parentBtn{position:fixed;top:10px;right:10px;width:54px;height:54px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--soft);font-size:12px;z-index:4}
 #timer{position:fixed;top:18px;left:16px;font-size:13px;color:var(--soft)}
 /* start screen */
@@ -144,6 +147,7 @@ select,input[type=range]{max-width:58%}
 </div>
 
 <div id="timer"></div>
+<div id="ear" title="듣는 중"><i></i></div>
 <div id="think"></div>
 <div id="alert">{N}가 울어요 — 안아 주세요</div>
 <button id="parentBtn" title="길게 누르면 열려요">부모<br>●</button>
@@ -270,7 +274,7 @@ function day() {
   DB.days[k] = DB.days[k] || { events: [], turns: 0, bestChain: 0, sessions: 0, minutes: 0 };
   return DB.days[k];
 }
-const S = Object.assign({ sens: 5, rate: 85, idle: 25, dim: false, think: true, voice: '' }, DB.settings);
+const S = Object.assign({ sens: 8, rate: 85, idle: 25, dim: false, think: true, voice: '' }, DB.settings);
 function saveSettings() { DB.settings = S; save(); }
 
 /* ============ 오디오 ============ */
@@ -283,7 +287,7 @@ function initAudio() {
 }
 async function initMic() {
   micStream = await navigator.mediaDevices.getUserMedia({
-    audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false }
+    audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true }
   });
   const src = AC.createMediaStreamSource(micStream);
   analyser = AC.createAnalyser(); analyser.fftSize = 2048;
@@ -319,9 +323,11 @@ function say(text, { pitch = 1.45, rate } = {}) {
     u.lang = 'ko-KR'; u.pitch = pitch; u.rate = (rate || S.rate) / 100;
     u.volume = nightMode() ? 0.7 : 1;
     let talk = setInterval(() => { mouth.setAttribute('ry', 5 + Math.random() * 16); mouth.setAttribute('rx', 14 + Math.random() * 6); }, 110);
-    const done = () => { clearInterval(talk); mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16); busy=Math.max(0,busy-1); muteUntil = performance.now() + 600; markServe(); res(); };
+    let fin = false;
+    const done = () => { if (fin) return; fin = true; clearTimeout(guard); clearInterval(talk); mouth.setAttribute('ry', 5); mouth.setAttribute('rx', 16); busy=Math.max(0,busy-1); muteUntil = performance.now() + 600; markServe(); res(); };
     u.onend = done; u.onerror = done;
-    speechSynthesis.speak(u);
+    const guard = setTimeout(() => { try { speechSynthesis.cancel(); } catch (e) {} done(); }, 2500 + T(text).length * 260);  // 폰에서 끝 신호가 안 와도 멈추지 않게
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
   });
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -439,6 +445,9 @@ async function sing(key) {
 /* ============ 소리 듣기 (이 기기 안에서만 분석) ============ */
 let floor = 0.004, seg = null, utt = null, lastVoiceAt = 0, lastServeAt = 0, chain = 0;
 function markServe() { lastServeAt = performance.now(); }
+const earEl = () => document.getElementById('ear');
+function earLevel(x) { const e = earEl(); if (!e) return; e.firstChild.style.transform = `scale(${Math.min(3, 0.6 + x * 1.2)})`; e.classList.toggle('hot', x > 1); }
+function hint(t) { if (!S.think) return; const el = document.getElementById('think'); el.innerHTML = `<span class="tag">${t}</span>`; clearTimeout(showThink.t); showThink.t = setTimeout(() => el.innerHTML = '', 4000); }
 function rmsOf(b) { let s = 0; for (let i = 0; i < b.length; i++) s += b[i] * b[i]; return Math.sqrt(s / b.length); }
 function pitchOf(b, sr) {            // 자기상관 — 150~1400Hz
   const minL = Math.floor(sr / 1400), maxL = Math.floor(sr / 150), n = b.length;
@@ -449,16 +458,17 @@ function pitchOf(b, sr) {            // 자기상관 — 150~1400Hz
     let r = 0; for (let i = 0; i < n - L; i++) r += b[i] * b[i + L];
     r /= r0; if (r > best) { best = r; bestL = L; }
   }
-  return best > 0.45 ? sr / bestL : 0;
+  return best > 0.3 ? sr / bestL : 0;
 }
 const buf = new Float32Array(2048);
 function listenTick() {
   if (!analyser || (ended && !micTesting)) return;
   analyser.getFloatTimeDomainData(buf);
   const r = rmsOf(buf), now = performance.now();
-  const gated = busy > 0 || now < muteUntil || speechSynthesis.speaking;
+  const gated = busy > 0 || now < muteUntil;
   const k = 1.6 + (10 - S.sens) * 0.45;                    // 민감도
-  const thr = Math.max(floor * k * 1.8, 0.006 + (10 - S.sens) * 0.002);
+  const thr = Math.max(floor * k * 1.5, 0.003 + (10 - S.sens) * 0.0015);
+  earLevel(r / thr);
   if (!gated && r < thr) floor = floor * 0.995 + Math.min(r, floor * 2) * 0.005;
   if (micTesting) document.getElementById('micLvl').textContent = `소리 ${(r * 1000).toFixed(0)} / 기준 ${(thr * 1000).toFixed(0)}`;
   if (gated) { seg = null; utt = null; return; }
@@ -501,8 +511,8 @@ function analyse(u, thr) {
 }
 function classify(a) {
   if (a.dur < 0.12) return null;
-  if (a.voiced < 0.3) return null;                      // 물건 소리·잡음
-  if (a.med && a.med < 240) return 'adult';             // 어른 목소리
+  if (a.voiced < 0.15) return null;                      // 물건 소리·잡음
+  if (a.med && a.med < 210) return 'adult';             // 어른 목소리
   if (a.longest > 0.9 && a.loudness > 2.2 && a.voiced > 0.7 && a.med >= 300) return 'cry';
   if (a.syl >= 3 && a.rate > 4 && a.med > 350 && a.longest < 0.5) return 'laugh';
   if ((a.max > 950 && a.loudness > 1.5) || (a.med > 650 && a.loudness > 2)) return 'squeal';
@@ -574,10 +584,17 @@ async function respond(kind, a) {
 let crySegs = [];
 async function onUtterance(u, thr) {
   const a = analyse(u, thr), kind = classify(a);
-  if (!kind) return;
+  if (!kind) { if (!ended && a.dur > 0.12) hint('소리는 들렸는데 너무 작거나 짧아요'); return; }
   if (ended) { showThink(kind, a, interpret(kind, a)); return; }   // 마이크 테스트
   const now = performance.now();
-  if (kind === 'adult') { markServe(); return; }      // 어른이 말함 → {N} 대답을 기다림
+  if (kind === 'adult') {                              // 어른 목소리: 가끔만 짧게 받아 주고 아이 차례로 넘김
+    markServe(); hint('어른 목소리 들림');
+    if (!busy && Date.now() - (onUtterance.lastAdult || 0) > 20000) {
+      onUtterance.lastAdult = Date.now(); busy++;
+      try { await say(pick(['응~ 몽이 여기 있어! {N}도 말해 볼까?', '그랬구나~ {N}야, 너도 말해 줘!', '응응! {N}야, 몽이랑 얘기하자~'])); } finally { busy = Math.max(0, busy - 1); lastActAt = Date.now(); }
+    }
+    return;
+  }      // 어른이 말함 → {N} 대답을 기다림
   const isTurn = now - lastServeAt < 5000 && kind !== 'cry';
   const d = day();
   if (isTurn) { d.turns++; chain++; d.bestChain = Math.max(d.bestChain, chain); } else chain = 1;
